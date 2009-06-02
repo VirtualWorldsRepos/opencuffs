@@ -1,0 +1,26 @@
+application: collardata
+version: 1
+runtime: python
+api_version: 1
+
+handlers:
+- url: /static
+  static_dir: static
+
+- url: /updater/.*
+  script: updater.py
+
+- url: /news/.*
+  script: news.py
+
+- url: /db/.*
+  script: collardb.py
+  
+- url: /owners/.*
+  script: owners.py  
+
+- url: /removesub/.*
+  script: removesub.py
+
+- url: /dist/.*
+  script: dist.py
