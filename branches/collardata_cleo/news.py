@@ -7,7 +7,9 @@
 #
 #
 
+import cgi
 import os
+import re
 import logging
 import datetime
 import urllib
@@ -20,8 +22,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
 #people allowed to send notices
-adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022',#Nandana Singh 
-             '98cb0179-bc9c-461b-b52c-32420d5ac8ef']#Athaliah Opus
+adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef']
 
 class Article(db.Model):
     """the text of a notice, with author and date/time stamp"""
@@ -60,8 +61,7 @@ class MainPage(webapp.RequestHandler):
         self.response.out.write('hello world')
     
 class NewsCheck(webapp.RequestHandler):    
-    """responds to collars querying for new news items.  Returns 
-    newline-delimited list of new article ids that"""
+    """responds to collars querying for new news items"""
     def get(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
@@ -73,8 +73,10 @@ class NewsCheck(webapp.RequestHandler):
             if query.count() == 0:
                 #save the check date
                 lastchecked = AvLastChecked(av = av, dts = now)
+                lastchecked.put() 
                 #no date recorded, just go back a week
-                cutoff = weekago
+                articles = Article.gql('WHERE dts > :1', weekago)
+                self.response.out.write("\n".join([str(x.key()) for x in articles]))
             elif query.count() == 1:
                 #there's just one record, as there should be
                 lastchecked = query.get()
@@ -84,8 +86,11 @@ class NewsCheck(webapp.RequestHandler):
                     cutoff = weekago               
                 
                 lastchecked.dts = now
+                lastchecked.put() 
+                articles = Article.gql('WHERE dts > :1', cutoff)                 
+                self.response.out.write("\n".join([str(x.key()) for x in articles]))
             else:
-                #there's more than one record somehow.  use the first, delete the duplicates
+                #there's more than one record somehow.  delete the duplicates
                 lastchecked = query.get() 
                 cutoff = lastchecked.dts
                 if cutoff < weekago:
@@ -93,11 +98,11 @@ class NewsCheck(webapp.RequestHandler):
                     
                 for record in query:
                     record.delete()
-                #now make a new record
+                
                 lastchecked = AvLastChecked(av = av, dts = now)
-            lastchecked.put()  
-            articles = Article.gql('WHERE dts > :1', cutoff)                              
-            self.response.out.write("\n".join([str(x.key()) for x in articles]))            
+                lastchecked.put()  
+                articles = Article.gql('WHERE dts > :1', cutoff)                              
+                self.response.out.write("\n".join([str(x.key()) for x in articles]))            
                 
                 
 
