@@ -1,4 +1,4 @@
-application: collardata
+application: collardata1
 version: 1
 runtime: python
 api_version: 1
@@ -15,12 +15,16 @@ handlers:
 
 - url: /db/.*
   script: collardb.py
-  
+
 - url: /owners/.*
-  script: owners.py  
+  script: owners.py
 
 - url: /removesub/.*
   script: removesub.py
 
 - url: /dist/.*
   script: dist.py
+
+- url: /cron/.*
+  script: cronjobs.py
+  login: admin
