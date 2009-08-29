@@ -1,0 +1,23 @@
+[ Standing ]male stand 3|male stand 4
+[ Walking ]poser4walk
+[ Sitting ]
+[ Sitting On Ground ]ground_sit
+[ Crouching ]
+[ Crouch Walking ]
+[ Landing ]
+[ Standing Up ]
+[ Falling ]
+[ Flying Down ]
+[ Flying Up ]
+[ Flying ]
+[ Flying Slow ]
+[ Hovering ]
+[ Jumping ]
+[ Pre Jumping ]
+[ Running ]poser5run
+[ Turning Right ]
+[ Turning Left ]
+[ Floating ]
+[ Swimming Forward ]
+[ Swimming Up ]
+[ Swimming Down ]
