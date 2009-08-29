@@ -1,0 +1,3 @@
+oc_colorsettings=Base~<1.0, 1.0, 1.0>~Label~<1.0, 1.0, 1.0>~Ring~<0.222220, 0.222220, 0.222220>~Trim~<0.222220, 0.222220, 0.222220>~FloatText~<0.541180, 0.984310, 0.090200>
+oc_textures=Ring~671d65f9-bc61-6b2a-cd30-a492c0a453be~Trim~671d65f9-bc61-6b2a-cd30-a492c0a453be~Base~7a2ab76e-53de-a505-00c1-36f0d5e9e30d
+rlvon=unset
