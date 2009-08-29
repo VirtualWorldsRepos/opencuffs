@@ -9,23 +9,31 @@ import lindenip
 import distributors
 import logging
 
+import yaml
+
 import wsgiref.handlers
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
+from google.appengine.api import memcache
 
-#only nandana singh adn athaliah opus are authorized to add distributors
+from updater import FreebieItem, FreebieDelivery
+
+#only nandana singh and athaliah opus are authorized to add distributors
 adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef']
 
-class FreebieItem(db.Model):
-    freebie_name = db.StringProperty(required=True)
-    freebie_version = db.StringProperty(required=True)
-    freebie_giver = db.StringProperty(required=True)
-    
-class FreebieDelivery(db.Model):
-    giverkey = db.StringProperty(required=True)
-    rcptkey = db.StringProperty(required=True)
-    itemname = db.StringProperty(required=True)#in form "name - version"
+def enqueue_delivery(giver, rcpt, objname):
+    #check memcache for giver's queue
+    token = "deliveries_%s" % giver
+    queue = memcache.get(token)
+    if queue is None:
+        #if not, create new key and save
+        memcache.set(token, yaml.safe_dump([[objname, rcpt]]))
+    else:
+        logging.info('queue for %s is %s' % (giver, queue))        
+        deliveries = yaml.safe_load(queue)
+        deliveries.append([objname, rcpt])#yes I really mean append.  this is a list of lists 
+        memcache.set(token, yaml.safe_dump(deliveries))
     
 class Deliver(webapp.RequestHandler):
     def post(self):
@@ -41,7 +49,7 @@ class Deliver(webapp.RequestHandler):
             params = {}
             for line in lines:
                 params[line.split('=')[0]] = line.split('=')[1]
-            #look for 
+            
             try:
                 query = FreebieItem.gql('WHERE freebie_name = :1', params['objname'])
                 if query.count() > 0:
@@ -49,12 +57,13 @@ class Deliver(webapp.RequestHandler):
                     giver = str(item.freebie_giver)
                     rcpt = str(params['rcpt'])
                     obj = '%s - %s' % (params['objname'], item.freebie_version)
-                    delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = obj)
                     logging.info('enqueued delivery of %s to %s by %s' % (obj, rcpt, self.request.headers['X-SecondLife-Owner-Name']))
-                    delivery.put()
+                    enqueue_delivery(giver, rcpt, obj)
+                    #delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = obj)
+                    #delivery.put()
                     self.response.out.write('hi there')                    
                 else:
-                    #return an error
+                    #could not find item to look up its deliverer.  return an error
                     self.error(403)
             except KeyError:
                 self.error(403)

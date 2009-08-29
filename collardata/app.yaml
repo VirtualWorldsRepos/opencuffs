@@ -11,7 +11,7 @@ handlers:
   script: updater.py
 
 - url: /news/.*
-  script: news.py
+  script: news_stub.py
 
 - url: /db/.*
   script: collardb.py
@@ -24,3 +24,6 @@ handlers:
 
 - url: /dist/.*
   script: dist.py
+
+- url: /cleanup/.*
+  script: cleanup.py
