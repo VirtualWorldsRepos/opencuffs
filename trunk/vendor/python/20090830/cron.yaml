@@ -1,0 +1,4 @@
+cron:
+- description: cleanup for vendor textures
+  url: /cron/crontexturecleanup
+  schedule: every 1 hours
