@@ -37,13 +37,13 @@ class VendorItem(db.Model):
     item_giver = db.StringProperty(required=True)
     item_owner = db.StringProperty(required=True)
     item_url = db.StringProperty(required=True)
-    item_update_time = db.TimeProperty(required=True)
+    item_lastupdate = db.IntegerProperty(required=True)
 
 # storage of textures for the disribution system, will be handled fromone cetral server
 class VendorTexture(db.Model):
     item_name = db.StringProperty(required=True)
     item_texture = db.StringProperty(required=True)
-    item_update_time = db.FloatProperty(required=True)
+    item_update_time = db.IntegerProperty(required=True)
     texture_owner = db.StringProperty(required=True)
 
 
