@@ -176,7 +176,7 @@ class GetTexture(webapp.RequestHandler):
                 # batch, to know where to start the next batch.
                 object = self.request.get('object')
                 if object:
-                    query = VendorTexture.gql('WHERE item_name = :1', object)
+                    query = VendorTexture.gql('WHERE item_name = :1', object).get()
                     result="none"
                     if query is None:
                         result="none"
@@ -190,6 +190,7 @@ def main():
   application = webapp.WSGIApplication([
                                         (r'/.*?/updatetexture',AddTexture),
                                         (r'/.*?/getalltextures',GetAllTextures),
+                                        (r'/.*?/gettexture',GetTexture),
                                         (r'/.*?/updateobject',AddObject)
                                         ], debug=True)
   wsgiref.handlers.CGIHandler().run(application)

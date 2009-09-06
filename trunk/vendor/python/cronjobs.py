@@ -21,6 +21,8 @@ from google.appengine.ext import db
 
 null_key = "00000000-0000-0000-0000-000000000000"
 
+texture_cleanup_time = 60*60*3
+
 ##class CronFreebieItems(webapp.RequestHandler):
 ##    # cron job to clean the freebie items which are outdated
 ##    def get(self):
@@ -66,17 +68,17 @@ class CronTextureCleanup(webapp.RequestHandler):
     def get(self):
       #if False: # safety to prevent crons to go off before we really want them
         cronjob=self.request.headers['X-AppEngine-Cron'] # request this header to make sure only the google cron engine can call it, if this is not in the header the py code wil crash (on purpose :) )
-        t = time.time() - (60*60*3)
-        record = db.GqlQuery("SELECT * FROM VendorTexture WHERE item_update_time< %f" % (t)) # process all items in FreebieDelivery DB
+        t = int(time.time()) - texture_cleanup_time
+        record = db.GqlQuery("SELECT * FROM VendorTexture WHERE item_update_time < %d" % (t)) # process all items in FreebieDelivery DB
         deleted=0
         if record is None: # do we have any deliveries
-            logging.info("Cron: No texture to remove found!")
+            logging.info("Cron: No textures found!")
         else:
             for texture in record: # process each request
                 logging.info("Cron: Deleting outdated texture for %s (%s)" % (texture.item_name,texture.item_texture))
                 texture.delete() # so delete it
                 deleted=deleted+1
-            logging.info("Cron: Deleted %d textures with times below %f" % (deleted,t))
+            logging.info("Cron: Deleted %d textures with times below %d" % (deleted,t))
 
 
 def main():
