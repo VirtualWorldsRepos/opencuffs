@@ -19,8 +19,8 @@ from google.appengine.api import memcache
 
 from updater import FreebieItem, FreebieDelivery
 
-#only nandana singh and athaliah opus are authorized to add distributors
-adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef']
+#only nandana singh and athaliah opus, cleo collins are authorized to add distributors
+adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef', 'dbd606b9-52bb-47f7-93a0-c3e427857824']
 
 def enqueue_delivery(giver, rcpt, objname):
     #check memcache for giver's queue
@@ -82,13 +82,33 @@ class AddDist(webapp.RequestHandler):
             params = {}
             for line in lines:
                 params[line.split('=')[0]] = line.split('=')[1]
+            logging.info('Distributor added: %s (%s)' % (params['name'], params['key']))
             distributors.add(params['key'], params['name'])   
-            self.response.out.write('added %s' % params['name'])
-    
+            self.response.out.write('Added distributor %s' % params['name'])
+
+class AddContrib(webapp.RequestHandler):
+    def post(self):
+        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
+            self.error(403)
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+            self.error(403)
+        else:
+            #add distributor
+            #populate a dictionary with what we've been given in post
+            #should be newline-delimited, token=value
+            lines = self.request.body.split('\n')
+            params = {}
+            for line in lines:
+                params[line.split('=')[0]] = line.split('=')[1]
+            logging.info('Contributor added: %s (%s)' % (params['name'], params['key']))
+            distributors.Contributor_add(params['key'], params['name'])
+            self.response.out.write('Added contributor %s' % params['name'])
+
 def main():
   application = webapp.WSGIApplication([
                                         (r'/.*?/deliver',Deliver),
-                                        (r'/.*?/adddist',AddDist)                                     
+                                        (r'/.*?/adddist',AddDist),
+                                        (r'/.*?/addcontrib',AddContrib)
                                         ], debug=True)
   wsgiref.handlers.CGIHandler().run(application)
 
