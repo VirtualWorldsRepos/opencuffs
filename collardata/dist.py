@@ -61,7 +61,7 @@ class Deliver(webapp.RequestHandler):
                     enqueue_delivery(giver, rcpt, obj)
                     #delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = obj)
                     #delivery.put()
-                    self.response.out.write('hi there')                    
+                    self.response.out.write('%s|%s' % (rcpt, obj))                    
                 else:
                     #could not find item to look up its deliverer.  return an error
                     self.error(403)

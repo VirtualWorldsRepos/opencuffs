@@ -88,6 +88,16 @@ class MainPage(webapp.RequestHandler):
                     relations.delete(av,"secowns",subbie)
                     # and prepare the answer for sl
                     answer+=2
+            
+            # updating relation again due to the bug 716: the relations got not always properly updated, so we need to be sure it happens now
+            if ((answer==0)|(answer==2)):
+                if (relations.delete(av,"owns",subbie)==1):
+                    logging.info("Remove sub request from %s for %s: Not in subbies db, but primary owner relation removed" % (avname,subbie))
+                    answer+=1
+            if ((answer==0)|(answer==1)):
+                 if (relations.delete(av,"secowns",subbie)==1):
+                    logging.info("Remove sub request from %s for %s: Not in subbies db, but secondary owner relation removed" % (avname,subbie))
+                    answer+=2
 
             #answer to sl so we know what happened
             self.response.headers['Content-Type'] = 'text/plain'

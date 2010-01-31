@@ -9,6 +9,7 @@ import logging
 import lindenip
 import distributors
 import wsgiref.handlers
+import datetime
 from google.appengine.ext import webapp
 from google.appengine.ext import db
 from google.appengine.api import memcache
@@ -34,6 +35,8 @@ class FreebieItem(db.Model):
     freebie_name = db.StringProperty(required=True)
     freebie_version = db.StringProperty(required=True)
     freebie_giver = db.StringProperty(required=True)
+    freebie_owner = db.StringProperty(required=False)
+    freebie_timedate = db.DateTimeProperty(required=False)
     
 class FreebieDelivery(db.Model):
     giverkey = db.StringProperty(required=True)
@@ -50,6 +53,8 @@ class Check(webapp.RequestHandler):
             #look for an item with the requested name
             name = cgi.escape(self.request.get('object'))    
             version = cgi.escape(self.request.get('version'))
+            update = cgi.escape(self.request.get('update'))
+
             #logging.info('%s checked %s version %s' % (self.request.headers['X-SecondLife-Owner-Name'], name, version))
             
             token = 'item_%s' % name
@@ -79,7 +84,8 @@ class Check(webapp.RequestHandler):
                 
                 #enqueue delivery, if queue does not already contain this delivery
                 name_version = "%s - %s" % (name, item['version'])
-                enqueue_delivery(item['giver'], rcpt, name_version)
+                if update != "no":
+                    enqueue_delivery(item['giver'], rcpt, name_version)
                 #queue = FreebieDelivery.gql("WHERE rcptkey = :1 AND itemname = :2", rcpt, name_version)
                 #if queue.count() == 0:
                 #    delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = name_version)
@@ -101,15 +107,19 @@ class UpdateItem(webapp.RequestHandler):
             version = cgi.escape(self.request.get('version'))
             giverkey = self.request.headers['X-SecondLife-Object-Key']
             avname = self.request.headers['X-SecondLife-Owner-Name']
+            timestring = datetime.datetime.utcnow()
+
             #look for an existing item with that name
             items = FreebieItem.gql("WHERE freebie_name = :1", name)   
             item = items.get()
             if (item == None):
-                newitem = FreebieItem(freebie_name = name, freebie_version = version, freebie_giver = giverkey)
+                newitem = FreebieItem(freebie_name = name, freebie_version = version, freebie_giver = giverkey, freebie_owner = avname, freebie_timedate = timestring)
                 newitem.put()
             else:
                 item.freebie_version = version
                 item.freebie_giver = giverkey
+                item.freebie_owner = avname
+                freebie_timedate = timestring
                 item.put()
             #update item in memcache
             token = 'item_%s' % name
@@ -129,6 +139,15 @@ class DeliveryQueue(webapp.RequestHandler):
             givername = self.request.headers['X-SecondLife-Object-Name']
             pop = cgi.escape(self.request.get('pop'))#true or false.  if true, then remove items from db on returning them
             avname = self.request.headers['X-SecondLife-Owner-Name']
+            
+            if (False): # to enable/disable the update routine fast, only need to update old records
+                timestring = datetime.datetime.utcnow()
+                query = FreebieItem.gql("WHERE freebie_giver = :1", giverkey)
+                for record in query:
+                    record.freebie_owner = avname
+                    record.freebie_timedate = timestring
+                    record.put()
+                    logging.info('Updated %s from %s' % (record.freebie_name, avname))
             
             #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
             token = "deliveries_%s" % giverkey

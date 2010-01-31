@@ -1,8 +1,8 @@
 application: collardata1
-version: 1
+version: httpin
 runtime: python
 api_version: 1
-#bra and some more change+11
+
 handlers:
 - url: /static
   static_dir: static
@@ -11,8 +11,9 @@ handlers:
   script: updater.py
 
 - url: /news/.*
-  script: news_stub.py
-
+  static_files: static/blank.html
+  upload: static/blank.html
+  
 - url: /db/.*
   script: collardb.py
   
@@ -27,3 +28,19 @@ handlers:
 
 - url: /cleanup/.*
   script: cleanup.py
+  
+- url: /remote/.*
+  script: remote_stub.py
+
+- url: /remote_api
+  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
+  login: admin
+  
+- url: /admin/.*
+  script: $PYTHON_LIB/google/appengine/ext/admin
+  login: admin
+  
+- url: /freebielist/.*
+  script: freebielist.py
+  login: admin
+  
