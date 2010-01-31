@@ -1,4 +1,3 @@
-# Cleo: I suggest to keep this file out of the SVN and pas it as txt or as mail to the developers
 
 #!/usr/bin/python
 #Licensed under the GPLv2 (not later versions)
@@ -17,8 +16,7 @@ class AvTokenValue(db.Model):
 
 #Cleo: not allowed AVs
 # depending on the amount of AVs invovled in the attack we might need to change this to a database, i would like to prevent for now to save apptime
-blockedkeys = ['10df50e8-2505-4842-ac4a-040676c662f6','60a69bbf-c9eb-4890-8916-13d77b989c6f','8102b53b-f0e0-408f-86f2-dcd73f7fe57b','9ab67137-f9e9-47cd-8b11-4281a5c42344']
-# sapphire Honey, Belle Laperriere, Flora Kelberry, Twilight Secretspy
+blockedkeys = []
 
 # wanr if the token name is longer than this so we can easier discover attack from ALTs
 warntokenname = 30
