@@ -78,7 +78,9 @@ class MainPage(webapp.RequestHandler):
             av = self.request.headers['X-SecondLife-Owner-Key']        
             out = QueueString(av)
             if out is None:
-                self.error(404)
+                #self.error(404)
+                self.response.headers['Content-Type'] = 'text/plain'                 
+                self.response.out.write(out)
             else:
                 self.response.headers['Content-Type'] = 'text/plain'                 
                 self.response.out.write(out)
