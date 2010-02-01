@@ -49,22 +49,29 @@ class Deliver(webapp.RequestHandler):
             params = {}
             for line in lines:
                 params[line.split('=')[0]] = line.split('=')[1]
-            
+
             try:
-                query = FreebieItem.gql('WHERE freebie_name = :1', params['objname'])
-                if query.count() > 0:
-                    item = query.get()
-                    giver = str(item.freebie_giver)
-                    rcpt = str(params['rcpt'])
-                    obj = '%s - %s' % (params['objname'], item.freebie_version)
-                    logging.info('enqueued delivery of %s to %s by %s' % (obj, rcpt, self.request.headers['X-SecondLife-Owner-Name']))
-                    enqueue_delivery(giver, rcpt, obj)
-                    #delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = obj)
-                    #delivery.put()
-                    self.response.out.write('%s|%s' % (rcpt, obj))                    
+                name = params['objname']
+                token = 'item_%s' % name
+                cacheditem = memcache.get(token)
+                if cacheditem is None:
+                    freebieitem = FreebieItem.gql("WHERE freebie_name = :1", name).get()
+                    if freebieitem is None:
+                        #could not find item to look up its deliverer.  return an error
+                        self.error(403)
+                        return
+                    else:
+                        item = {"name":freebieitem.freebie_name, "version":freebieitem.freebie_version, "giver":freebieitem.freebie_giver}
+                        memcache.set(token, yaml.safe_dump(item))
                 else:
-                    #could not find item to look up its deliverer.  return an error
-                    self.error(403)
+                    #pull the item's details out of the yaml'd dict
+                    item = yaml.safe_load(cacheditem)
+
+                name_version = "%s - %s" % (name, item['version'])
+                rcpt = str(params['rcpt'])
+
+                enqueue_delivery(item['giver'], rcpt, name_version)
+                self.response.out.write('%s|%s' % (rcpt, name_version))
             except KeyError:
                 self.error(403)
 
