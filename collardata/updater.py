@@ -99,7 +99,8 @@ class UpdateItem(webapp.RequestHandler):
     def get(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not distributors.authorized(self.request.headers['X-SecondLife-Owner-Key']):
+        elif not distributors.Contributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
+            logging.info("Illegal attempt to update item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Key'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
             self.response.headers['Content-Type'] = 'text/plain'            
@@ -131,15 +132,17 @@ class DeliveryQueue(webapp.RequestHandler):
     def get(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not distributors.authorized(self.request.headers['X-SecondLife-Owner-Key']):
+        elif not distributors.Contributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
+            logging.info("Illegal attempt to check for item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Key'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
-        else:        
+        else:
             #get the deliveries where giverkey = key provided (this way we can still have multiple givers)
             giverkey = self.request.headers['X-SecondLife-Object-Key']
             givername = self.request.headers['X-SecondLife-Object-Name']
             pop = cgi.escape(self.request.get('pop'))#true or false.  if true, then remove items from db on returning them
             avname = self.request.headers['X-SecondLife-Owner-Name']
-            
+            #logging.info('%s from %s checked' % (givername, avname))
+
             if (False): # to enable/disable the update routine fast, only need to update old records
                 timestring = datetime.datetime.utcnow()
                 query = FreebieItem.gql("WHERE freebie_giver = :1", giverkey)
@@ -159,7 +162,7 @@ class DeliveryQueue(webapp.RequestHandler):
                 #write each out in form <objname>|receiverkey, one per line
                 out = '\n'.join(['|'.join(x) for x in deliveries])
                 self.response.out.write(out)
-                logging.info('%s got delivery string\n%s' % (givername, out))                
+                logging.info('%s got delivery string\n%s' % (givername, out))
                 memcache.delete(token)
             else:
                 self.response.out.write('') 

@@ -4,6 +4,7 @@
 
 from google.appengine.ext import db
 from google.appengine.api import memcache
+import logging
 
 class Distributor(db.Model):
     avname = db.StringProperty()
@@ -13,7 +14,7 @@ class Contributor(db.Model):
     avname = db.StringProperty()
     avkey = db.StringProperty()
 
-def authorized(av):
+def Distributor_authorized(av):
     #True if av is on the authorized distributor list, else False
     token = "dist_auth_%s" % av
     memrecord = memcache.get(token)
@@ -33,20 +34,20 @@ def authorized(av):
         else:
             return False
 
-def add(av, name):
+def Distributor_add(av, name):
     record = Distributor.gql('WHERE avkey = :1', av).get()
     if record is None:
         NewDist = Distributor(avkey = av, avname = name)
         NewDist.put()
-        token = "dist_auth_%s" % av
-        memcache.set(token, True)        
+    token = "dist_auth_%s" % av
+    memcache.set(token, True)
         
-def delete(av, name):
+def Distributor_delete(av, name):
     record = Distributor.gql('WHERE avkey = :1', av).get()
     if record is not None:
         record.delete()
-        token = "dist_auth_%s" % av
-        memcache.delete(token)
+    token = "dist_auth_%s" % av
+    memcache.delete(token)
 
 def Contributor_authorized(av):
     #True if av is on the authorized distributor list, else False
@@ -69,16 +70,16 @@ def Contributor_authorized(av):
             return False
 
 def Contributor_add(av, name):
-    record = Distributor.gql('WHERE avkey = :1', av).get()
+    record = Contributor.gql('WHERE avkey = :1', av).get()
     if record is None:
         NewDist = Contributor(avkey = av, avname = name)
         NewDist.put()
-        token = "contr_auth_%s" % av
-        memcache.set(token, True)
+    token = "contr_auth_%s" % av
+    memcache.set(token, True)
 
 def Contributor_delete(av, name):
     record = Contributor.gql('WHERE avkey = :1', av).get()
     if record is not None:
         record.delete()
-        token = "contr_auth_%s" % av
-        memcache.delete(token)
+    token = "contr_auth_%s" % av
+    memcache.delete(token)

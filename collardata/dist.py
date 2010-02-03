@@ -19,8 +19,8 @@ from google.appengine.api import memcache
 
 from updater import FreebieItem, FreebieDelivery
 
-#only nandana singh and athaliah opus, cleo collins are authorized to add distributors
-adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef', 'dbd606b9-52bb-47f7-93a0-c3e427857824']
+#only nandana singh and athaliah opus, cleo collins, master starship are authorized to add distributors
+adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef', 'dbd606b9-52bb-47f7-93a0-c3e427857824', '8487a396-dc5a-4047-8a5b-ab815adb36f0']
 
 def enqueue_delivery(giver, rcpt, objname):
     #check memcache for giver's queue
@@ -40,7 +40,8 @@ class Deliver(webapp.RequestHandler):
         #check linden IP  and allowed avs
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not distributors.authorized(self.request.headers['X-SecondLife-Owner-Key']):
+        elif not distributors.Distributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
+            logging.info("Illegal attempt to enqueue item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Key'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
             #populate a dictionary with what we've been given in post
@@ -90,8 +91,26 @@ class AddDist(webapp.RequestHandler):
             for line in lines:
                 params[line.split('=')[0]] = line.split('=')[1]
             logging.info('Distributor added: %s (%s)' % (params['name'], params['key']))
-            distributors.add(params['key'], params['name'])   
+            distributors.Distributor_add(params['key'], params['name'])
             self.response.out.write('Added distributor %s' % params['name'])
+
+class RemDist(webapp.RequestHandler):
+    def post(self):
+        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
+            self.error(403)
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+            self.error(403)
+        else:
+            #add distributor
+            #populate a dictionary with what we've been given in post
+            #should be newline-delimited, token=value
+            lines = self.request.body.split('\n')
+            params = {}
+            for line in lines:
+                params[line.split('=')[0]] = line.split('=')[1]
+            logging.info('Distributor removed: %s (%s)' % (params['name'], params['key']))
+            distributors.Distributor_delete(params['key'], params['name'])
+            self.response.out.write('Removed Distributor %s' % params['name'])
 
 class AddContrib(webapp.RequestHandler):
     def post(self):
@@ -111,11 +130,33 @@ class AddContrib(webapp.RequestHandler):
             distributors.Contributor_add(params['key'], params['name'])
             self.response.out.write('Added contributor %s' % params['name'])
 
+class RemContrib(webapp.RequestHandler):
+    def post(self):
+        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
+            self.error(403)
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+            self.error(403)
+        else:
+            #add distributor
+            #populate a dictionary with what we've been given in post
+            #should be newline-delimited, token=value
+            lines = self.request.body.split('\n')
+            params = {}
+            for line in lines:
+                params[line.split('=')[0]] = line.split('=')[1]
+            logging.info('Contributor removed: %s (%s)' % (params['name'], params['key']))
+            distributors.Contributor_delete(params['key'], params['name'])
+            self.response.out.write('Removed Contributor %s' % params['name'])
+
+
+
 def main():
   application = webapp.WSGIApplication([
                                         (r'/.*?/deliver',Deliver),
                                         (r'/.*?/adddist',AddDist),
-                                        (r'/.*?/addcontrib',AddContrib)
+                                        (r'/.*?/remdist',RemDist),
+                                        (r'/.*?/addcontrib',AddContrib),
+                                        (r'/.*?/remcontrib',RemContrib)
                                         ], debug=True)
   wsgiref.handlers.CGIHandler().run(application)
 
