@@ -1,5 +1,5 @@
-application: collardata1
-version: httpin
+application: collardata
+version: 20100204
 runtime: python
 api_version: 1
 

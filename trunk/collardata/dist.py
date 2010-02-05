@@ -41,7 +41,7 @@ class Deliver(webapp.RequestHandler):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
         elif not distributors.Distributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
-            logging.info("Illegal attempt to enqueue item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Key'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
+            logging.info("Illegal attempt to enqueue item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
             #populate a dictionary with what we've been given in post
