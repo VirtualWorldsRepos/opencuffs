@@ -26,10 +26,16 @@ def enqueue_delivery(giver, rcpt, objname):
         #if not, create new key and save
         memcache.set(token, yaml.safe_dump([[objname, rcpt]]))
     else:
-        logging.info('queue for %s is %s' % (giver, queue))
         deliveries = yaml.safe_load(queue)
-        deliveries.append([objname, rcpt])#yes I really mean append.  this is a list of lists 
-        memcache.set(token, yaml.safe_dump(deliveries))
+        if len(deliveries) > 200:
+            logging.error('Queue for %s hosting %s is too long, data not stored' % (giver, objname))
+        else:
+            if len(deliveries) > 40:
+                logging.warning('Queue for %s hosting %s is getting long (%d entries)' % (giver, objname, len(deliveries)))
+            logging.info('queue for %s is %s' % (giver, queue))
+            objname = '%s / %d' % (objname, len(deliveries))
+            deliveries.append([objname, rcpt])#yes I really mean append.  this is a list of lists
+            memcache.set(token, yaml.safe_dump(deliveries))
 
 class FreebieItem(db.Model):
     freebie_name = db.StringProperty(required=True)
@@ -144,7 +150,7 @@ class DeliveryQueue(webapp.RequestHandler):
             givername = self.request.headers['X-SecondLife-Object-Name']
             pop = cgi.escape(self.request.get('pop'))#true or false.  if true, then remove items from db on returning them
             avname = self.request.headers['X-SecondLife-Owner-Name']
-            #logging.info('%s (%s) from %s checked' % (givername, giverkey, avname))
+            logging.info('%s (%s) from %s checked' % (givername, giverkey, avname))
 
             if (False): # to enable/disable the update routine fast, only need to update old records
                 timestring = datetime.datetime.utcnow()
@@ -158,20 +164,25 @@ class DeliveryQueue(webapp.RequestHandler):
                     record.put()
                     logging.info('Updated %s from %s' % (record.freebie_name, avname))
             
-            #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
-            token = "deliveries_%s" % giverkey
-            queue = memcache.get(token)
-            if queue is not None:
-                response = ""
-                deliveries = yaml.safe_load(queue)
-                #take the list of lists and format it
-                #write each out in form <objname>|receiverkey, one per line
-                out = '\n'.join(['|'.join(x) for x in deliveries])
-                self.response.out.write(out)
-                logging.info('%s got delivery string\n%s' % (givername, out))
-                memcache.delete(token)
+            
+            if (True):
+                enqueue_delivery('0df4163d-b375-25b0-af0f-de262dbbc034 ', 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400')
+                self.response.out.write('')
             else:
-                self.response.out.write('') 
+            #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
+                token = "deliveries_%s" % giverkey
+                queue = memcache.get(token)
+                if queue is not None:
+                    response = ""
+                    deliveries = yaml.safe_load(queue)
+                    #take the list of lists and format it
+                    #write each out in form <objname>|receiverkey, one per line
+                    out = '\n'.join(['|'.join(x) for x in deliveries])
+                    self.response.out.write(out)
+                    logging.info('%s got delivery string\n%s' % (givername, out))
+                    memcache.delete(token)
+                else:
+                    self.response.out.write('')
 
 def main():
   application = webapp.WSGIApplication([(r'/.*?/check',Check),
