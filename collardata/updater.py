@@ -37,6 +37,7 @@ class FreebieItem(db.Model):
     freebie_giver = db.StringProperty(required=True)
     freebie_owner = db.StringProperty(required=False)
     freebie_timedate = db.DateTimeProperty(required=False)
+    freebie_location = db.StringProperty(required=False)
     
 class FreebieDelivery(db.Model):
     giverkey = db.StringProperty(required=True)
@@ -100,7 +101,7 @@ class UpdateItem(webapp.RequestHandler):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
         elif not distributors.Contributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
-            logging.info("Illegal attempt to update item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Key'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
+            logging.warning("Illegal attempt to update item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
             self.response.headers['Content-Type'] = 'text/plain'            
@@ -108,19 +109,21 @@ class UpdateItem(webapp.RequestHandler):
             version = cgi.escape(self.request.get('version'))
             giverkey = self.request.headers['X-SecondLife-Object-Key']
             avname = self.request.headers['X-SecondLife-Owner-Name']
+            location = '%s @ %s' % (self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position'])
             timestring = datetime.datetime.utcnow()
 
             #look for an existing item with that name
             items = FreebieItem.gql("WHERE freebie_name = :1", name)   
             item = items.get()
             if (item == None):
-                newitem = FreebieItem(freebie_name = name, freebie_version = version, freebie_giver = giverkey, freebie_owner = avname, freebie_timedate = timestring)
+                newitem = FreebieItem(freebie_name = name, freebie_version = version, freebie_giver = giverkey, freebie_owner = avname, freebie_timedate = timestring, freebie_location = location)
                 newitem.put()
             else:
                 item.freebie_version = version
                 item.freebie_giver = giverkey
                 item.freebie_owner = avname
-                freebie_timedate = timestring
+                item.freebie_timedate = timestring
+                item.freebie_location = location
                 item.put()
             #update item in memcache
             token = 'item_%s' % name
@@ -133,7 +136,7 @@ class DeliveryQueue(webapp.RequestHandler):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
         elif not distributors.Contributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
-            logging.info("Illegal attempt to check for item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Key'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
+            logging.warning("Illegal attempt to check for item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
             #get the deliveries where giverkey = key provided (this way we can still have multiple givers)
@@ -141,14 +144,17 @@ class DeliveryQueue(webapp.RequestHandler):
             givername = self.request.headers['X-SecondLife-Object-Name']
             pop = cgi.escape(self.request.get('pop'))#true or false.  if true, then remove items from db on returning them
             avname = self.request.headers['X-SecondLife-Owner-Name']
-            #logging.info('%s from %s checked' % (givername, avname))
+            #logging.info('%s (%s) from %s checked' % (givername, giverkey, avname))
 
             if (False): # to enable/disable the update routine fast, only need to update old records
                 timestring = datetime.datetime.utcnow()
+                location = '%s @ %s' % (self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position'])
+
                 query = FreebieItem.gql("WHERE freebie_giver = :1", giverkey)
                 for record in query:
                     record.freebie_owner = avname
                     record.freebie_timedate = timestring
+                    record.freebie_location = location
                     record.put()
                     logging.info('Updated %s from %s' % (record.freebie_name, avname))
             
