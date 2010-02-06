@@ -51,17 +51,20 @@ def SendAlarm(issue, target, admins, message):
             memcache.set(unique, "", 600)
             logging.info('Alarm send for %s to %s: \n%s' % (unique, alarmurl, message))
             rpc = urlfetch.create_rpc()
-            urlfetch.make_fetch_call(rpc, alarmurl, method="POST", headers={'issue': issue, 'target': target, 'admins': admins})
+            urlfetch.make_fetch_call(rpc, self.request.host_url+"/alarm/redirect/" , method="POST", headers={'issue': issue, 'target': target, 'admins': admins})
 ##            try:
 ##                result = rpc.get_result()
 ##                logging.info('Result: %d' % result.status_code);
 ##            except urlfetch.DownloadError:
 ##                logging.info('urlfetch.DownloadError')
 
-
+class Redirect(webapp.RequestHandler):
+    def post(self):
+        self.redirect(alarmurl, True)
 
 def main():
-  application = webapp.WSGIApplication([(r'/.*?/urlset',SetAlarmURL)
+  application = webapp.WSGIApplication([(r'/.*?/urlset',SetAlarmURL),
+                                        (r'/.*?/redirect/',Redirect)
                                         ],
                                        debug=True)
   wsgiref.handlers.CGIHandler().run(application)
