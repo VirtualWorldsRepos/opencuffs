@@ -43,4 +43,6 @@ handlers:
 - url: /freebielist/.*
   script: freebielist.py
   login: admin
-  
+
+- url: /alarm/.*
+  script: alarm.py

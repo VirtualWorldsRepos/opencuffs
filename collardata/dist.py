@@ -20,9 +20,6 @@ from google.appengine.api import memcache
 
 from updater import FreebieItem, FreebieDelivery
 
-#only nandana singh and athaliah opus, cleo collins, master starship are authorized to add distributors
-adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef', 'dbd606b9-52bb-47f7-93a0-c3e427857824', '8487a396-dc5a-4047-8a5b-ab815adb36f0']
-
 class Deliver(webapp.RequestHandler):
     def post(self):
         #check linden IP  and allowed avs
@@ -68,7 +65,7 @@ class AddDist(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
             self.error(403)
         else:
             #add distributor
@@ -86,7 +83,7 @@ class RemDist(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
             self.error(403)
         else:
             #add distributor
@@ -104,7 +101,7 @@ class AddContrib(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
             self.error(403)
         else:
             #add distributor
@@ -122,7 +119,7 @@ class RemContrib(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
             self.error(403)
         else:
             #add distributor
