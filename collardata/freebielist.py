@@ -12,13 +12,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 
-class FreebieItem(db.Model):
-    freebie_name = db.StringProperty(required=True)
-    freebie_version = db.StringProperty(required=True)
-    freebie_giver = db.StringProperty(required=True)
-    freebie_owner = db.StringProperty(required=False)
-    freebie_timedate = db.DateTimeProperty(required=False)
-
+from updater import FreebieItem
 
 head = '''
 <html>
@@ -28,7 +22,7 @@ head = '''
 <style>
 body {
     background-color: #000000;
-    color: #FF0000;
+    color: #FFFFFF;
 }
 input {
     background-color: #000000;
@@ -37,8 +31,8 @@ input {
     border-color: #FF0000;
 }
 table.sortable thead {
-    background-color:#eee;
-    color:#666666;
+    background-color:#202020;
+    color:#FFFFFF;
     font-weight: bold;
     cursor: default;
 }
@@ -60,14 +54,14 @@ class MainPage(webapp.RequestHandler):
         message = '''<h1>List of Freebie items</h1>
 <p>This list all item currently in the distribution system as of %s.</p>
 <table class="sortable" border=\"1\">''' % datetime.datetime.utcnow().isoformat(' ')
-        message += '<tr><th>Row</th><th>Owner</th><th>Giver ID</th><th>Name</th><th>Version</th><th>Update Date</th><br />\n'
+        message += '<tr><th>Row</th><th>Owner</th><th>Giver ID</th><th>Name</th><th>Version</th><th>Update Date</th><th>Distributor Location</th><br />\n'
         query = FreebieItem.gql("")
         content =[]
         for record in query:
             owner = record.freebie_owner
             if (owner == None):
                 owner = '***Not assigned***'
-            content += ['<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>\n' % (owner, record.freebie_giver, record.freebie_name, record.freebie_version, record.freebie_timedate)]
+            content += ['<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>\n' % (owner, record.freebie_giver, record.freebie_name, record.freebie_version, record.freebie_timedate, record.freebie_location)]
 
         content = sorted(content)
 

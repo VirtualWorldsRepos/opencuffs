@@ -10,6 +10,8 @@ import lindenip
 import distributors
 import wsgiref.handlers
 import datetime
+import tools
+
 from google.appengine.ext import webapp
 from google.appengine.ext import db
 from google.appengine.api import memcache
@@ -17,25 +19,6 @@ from google.appengine.api import memcache
 import yaml
 
 null_key = "00000000-0000-0000-0000-000000000000"
-
-def enqueue_delivery(giver, rcpt, objname):
-    #check memcache for giver's queue
-    token = "deliveries_%s" % giver
-    queue = memcache.get(token)
-    if queue is None:
-        #if not, create new key and save
-        memcache.set(token, yaml.safe_dump([[objname, rcpt]]))
-    else:
-        deliveries = yaml.safe_load(queue)
-        if len(deliveries) > 200:
-            logging.error('Queue for %s hosting %s is too long, data not stored' % (giver, objname))
-        else:
-            if len(deliveries) > 40:
-                logging.warning('Queue for %s hosting %s is getting long (%d entries)' % (giver, objname, len(deliveries)))
-            logging.info('queue for %s is %s' % (giver, queue))
-            objname = '%s / %d' % (objname, len(deliveries))
-            deliveries.append([objname, rcpt])#yes I really mean append.  this is a list of lists
-            memcache.set(token, yaml.safe_dump(deliveries))
 
 class FreebieItem(db.Model):
     freebie_name = db.StringProperty(required=True)
@@ -92,7 +75,7 @@ class Check(webapp.RequestHandler):
                 #enqueue delivery, if queue does not already contain this delivery
                 name_version = "%s - %s" % (name, item['version'])
                 if update != "no":
-                    enqueue_delivery(item['giver'], rcpt, name_version)
+                    tools.enqueue_delivery(item['giver'], rcpt, name_version)
                 #queue = FreebieDelivery.gql("WHERE rcptkey = :1 AND itemname = :2", rcpt, name_version)
                 #if queue.count() == 0:
                 #    delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = name_version)
@@ -166,7 +149,7 @@ class DeliveryQueue(webapp.RequestHandler):
             
             
             if (True):
-                enqueue_delivery('0df4163d-b375-25b0-af0f-de262dbbc034 ', 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400')
+                tools.enqueue_delivery(giverkey, 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400')
                 self.response.out.write('')
             else:
             #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
