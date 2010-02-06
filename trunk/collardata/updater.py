@@ -75,7 +75,8 @@ class Check(webapp.RequestHandler):
                 #enqueue delivery, if queue does not already contain this delivery
                 name_version = "%s - %s" % (name, item['version'])
                 if update != "no":
-                    tools.enqueue_delivery(item['giver'], rcpt, name_version)
+                    if tools.enqueue_delivery(item['giver'], rcpt, name_version)==False:
+                        self.error(403)
                 #queue = FreebieDelivery.gql("WHERE rcptkey = :1 AND itemname = :2", rcpt, name_version)
                 #if queue.count() == 0:
                 #    delivery = FreebieDelivery(giverkey = item.freebie_giver, rcptkey = rcpt, itemname = name_version)
@@ -149,15 +150,14 @@ class DeliveryQueue(webapp.RequestHandler):
             
             
             if (True):
-                tools.enqueue_delivery(giverkey, 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400')
+                tools.enqueue_delivery('%s_1' % giverkey, 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400')
                 self.response.out.write('')
             else:
             #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
                 token = "deliveries_%s" % giverkey
-                queue = memcache.get(token)
-                if queue is not None:
+                deliveries = memcache.get(token)
+                if deliveries is not None:
                     response = ""
-                    deliveries = yaml.safe_load(queue)
                     #take the list of lists and format it
                     #write each out in form <objname>|receiverkey, one per line
                     out = '\n'.join(['|'.join(x) for x in deliveries])

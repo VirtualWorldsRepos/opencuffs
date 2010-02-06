@@ -14,14 +14,11 @@ import urllib
 import random
 import lindenip
 import relations
+import tools
 
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
-
-#people allowed to send notices
-adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022',#Nandana Singh 
-             '98cb0179-bc9c-461b-b52c-32420d5ac8ef']#Athaliah Opus
 
 class Article(db.Model):
     """the text of a notice, with author and date/time stamp"""
@@ -108,7 +105,7 @@ class CreateArticle(webapp.RequestHandler):
             self.error(403)
         else:
             av = self.request.headers['X-SecondLife-Owner-Key']
-            if av in adminkeys:
+            if av in tools.adminkeys:
                 #save the notice
                 title = urllib.unquote(self.request.path.split("/")[-1])
                 article = Article(title = title, author = av, text = self.request.body, dts = datetime.datetime.now())
