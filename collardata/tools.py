@@ -6,7 +6,7 @@ import alarm
 adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef', 'dbd606b9-52bb-47f7-93a0-c3e427857824', '8487a396-dc5a-4047-8a5b-ab815adb36f0']
 
 
-def enqueue_delivery(giver, rcpt, objname):
+def enqueue_delivery(giver, rcpt, objname, redirecturl):
     #check memcache for giver's queue
     token = "deliveries_%s" % giver
     deliveries = memcache.get(token)
@@ -14,12 +14,12 @@ def enqueue_delivery(giver, rcpt, objname):
         #if not, create new key and save
         memcache.set(token, [[objname, rcpt]])
     else:
-        if len(deliveries) > 10:
+        if len(deliveries) > 200:
             logging.error('Queue for %s hosting %s is too long, data not stored' % (giver, objname))
-            alarm.SendAlarm('Vendor', giver, True, 'Queue for %s hosting %s is too long, data not stored' % (giver, objname))
+            alarm.SendAlarm('Vendor', giver, True, 'Vendor queue for %s hosting %s is too long, data not stored. Please make sure to check the object and the database usage!' % (giver, objname), redirecturl)
             return False
         else:
-            if len(deliveries) > 5:
+            if len(deliveries) > 50:
                 logging.warning('Queue for %s hosting %s is getting long (%d entries)' % (giver, objname, len(deliveries)))
             logging.info('queue for %s is %s' % (giver, deliveries))
             objname = '%s / %d' % (objname, len(deliveries))

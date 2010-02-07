@@ -75,7 +75,7 @@ class Check(webapp.RequestHandler):
                 #enqueue delivery, if queue does not already contain this delivery
                 name_version = "%s - %s" % (name, item['version'])
                 if update != "no":
-                    if tools.enqueue_delivery(item['giver'], rcpt, name_version)==False:
+                    if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url)==False:
                         self.error(403)
                 #queue = FreebieDelivery.gql("WHERE rcptkey = :1 AND itemname = :2", rcpt, name_version)
                 #if queue.count() == 0:
@@ -136,7 +136,8 @@ class DeliveryQueue(webapp.RequestHandler):
             avname = self.request.headers['X-SecondLife-Owner-Name']
             logging.info('%s (%s) from %s checked' % (givername, giverkey, avname))
 
-            if (False): # to enable/disable the update routine fast, only need to update old records
+# to enable/disable the update routine fast, only need to update old records
+            if (False): 
                 timestring = datetime.datetime.utcnow()
                 location = '%s @ %s' % (self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position'])
 
@@ -147,12 +148,14 @@ class DeliveryQueue(webapp.RequestHandler):
                     record.freebie_location = location
                     record.put()
                     logging.info('Updated %s from %s' % (record.freebie_name, avname))
-            
-            
-            if (True):
-                tools.enqueue_delivery('%s_1' % giverkey, 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400')
-                self.response.out.write('')
-            else:
+
+## only for testring the alarm
+##            if (True):
+##                if tools.enqueue_delivery('%s_1' % giverkey, 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400', self.request.host_url):
+##                    self.response.out.write('')
+##                else:
+##                    self.error(403)
+##            else:
             #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
                 token = "deliveries_%s" % giverkey
                 deliveries = memcache.get(token)
