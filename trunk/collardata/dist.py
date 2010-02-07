@@ -56,8 +56,10 @@ class Deliver(webapp.RequestHandler):
                 name_version = "%s - %s" % (name, item['version'])
                 rcpt = str(params['rcpt'])
 
-                tools.enqueue_delivery(item['giver'], rcpt, name_version)
-                self.response.out.write('%s|%s' % (rcpt, name_version))
+                if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url):
+                    self.response.out.write('%s|%s' % (rcpt, name_version))
+                else:
+                    self.error(403)
             except KeyError:
                 self.error(403)
 
