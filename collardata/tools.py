@@ -10,12 +10,9 @@ def enqueue_delivery(giver, rcpt, objname, redirecturl):
     #check memcache for giver's queue
     token = "deliveries_%s" % giver
     deliveries = memcache.get(token)
-    logging.info('Queue: %s|%s|%s|%s' % (giver, rcpt, objname, redirecturl))
     if deliveries is None:
         #if not, create new key and save
         memcache.set(token, [[objname, rcpt]])
-        deliveries = memcache.get(token)
-        logging.info('queue for %s is %s' % (giver, deliveries))
     else:
         if len(deliveries) > 200:
             logging.error('Queue for %s hosting %s is too long, data not stored' % (giver, objname))
