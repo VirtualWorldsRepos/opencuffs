@@ -45,7 +45,7 @@ class Check(webapp.RequestHandler):
             version = cgi.escape(self.request.get('version'))
             update = cgi.escape(self.request.get('update'))
 
-            #logging.info('%s checked %s version %s' % (self.request.headers['X-SecondLife-Owner-Name'], name, version))
+            logging.info('%s checked %s version %s' % (self.request.headers['X-SecondLife-Owner-Name'], name, version))
             
             token = 'item_%s' % name
             cacheditem = memcache.get(token)
@@ -75,6 +75,7 @@ class Check(webapp.RequestHandler):
                 #enqueue delivery, if queue does not already contain this delivery
                 name_version = "%s - %s" % (name, item['version'])
                 if update != "no":
+                    logging.info('Check->queue: %s|%s|%s|%s' % (item['giver'], rcpt, name_version, self.request.host_url))
                     if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url)==False:
                         self.error(403)
                 #queue = FreebieDelivery.gql("WHERE rcptkey = :1 AND itemname = :2", rcpt, name_version)
