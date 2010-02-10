@@ -150,26 +150,20 @@ class DeliveryQueue(webapp.RequestHandler):
                     record.put()
                     logging.info('Updated %s from %s' % (record.freebie_name, avname))
 
-## only for testring the alarm
-##            if (True):
-##                if tools.enqueue_delivery('%s_1' % giverkey, 'dbd606b9-52bb-47f7-93a0-c3e427857824', 'OpenCollarUpdater1 - 3.400', self.request.host_url):
-##                    self.response.out.write('')
-##                else:
-##                    self.error(403)
-##            else:
             #deliveries = FreebieDelivery.gql("WHERE giverkey = :1", giverkey)
-                token = "deliveries_%s" % giverkey
-                deliveries = memcache.get(token)
-                if deliveries is not None:
-                    response = ""
-                    #take the list of lists and format it
-                    #write each out in form <objname>|receiverkey, one per line
-                    out = '\n'.join(['|'.join(x) for x in deliveries])
-                    self.response.out.write(out)
-                    logging.info('%s got delivery string\n%s' % (givername, out))
-                    memcache.delete(token)
-                else:
-                    self.response.out.write('')
+            token = "deliveries_%s" % giverkey
+            deliveries = memcache.get(token)
+            logging.info('Queue %s is now: %s' % (token, deliveries))
+            if deliveries is not None:
+                response = ""
+                #take the list of lists and format it
+                #write each out in form <objname>|receiverkey, one per line
+                out = '\n'.join(['|'.join(x) for x in deliveries])
+                self.response.out.write(out)
+                logging.info('%s got delivery string\n%s' % (givername, out))
+                memcache.delete(token)
+            else:
+                self.response.out.write('')
 
 def main():
   application = webapp.WSGIApplication([(r'/.*?/check',Check),
