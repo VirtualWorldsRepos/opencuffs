@@ -194,18 +194,16 @@ class MassDelivery(webapp.RequestHandler):
             out = ''
             count = 0
 
-            while count<15:
             # send maximum 20 request to make sure the answer is 2048 bytes
-                delivery = DeliveryQueueUpdates.gql('WHERE objectname = :1 LIMIT 1', objname).get()
-                if delivery:
+            deliveries = DeliveryQueueUpdates.gql('WHERE objectname = :1 LIMIT 15', objname).get()
+            if deliveries:
+                # if there is something in the queue we send it in the format objectname|recipientkey to the distributor box, 1 per line
+                for delivery in deliveries:
                     # if there is something in the queue we send it in the format objectname|recipientkey to the distributor box, 1 per line
                     out = out + ('%s|%s\n' % (delivery.objectname,delivery.recipient))
                     # now delete the delivery
                     delivery.delete()
                     count = count + 1
-                else:
-                # no more item found, sio we break and return the list
-                    break
             # and send it to the box
             logging.info('Delivery for %d item(s) on its way' % count)
             self.response.out.write(out)
