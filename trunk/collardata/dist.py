@@ -55,7 +55,7 @@ class Deliver(webapp.RequestHandler):
 
                 name_version = "%s - %s" % (name, item['version'])
                 rcpt = str(params['rcpt'])
-
+                
                 if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url):
                     self.response.out.write('%s|%s' % (rcpt, name_version))
                 else:
