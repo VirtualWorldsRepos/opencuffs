@@ -1,5 +1,5 @@
 application: collardata1
-version: 20100210
+version: 20100213
 runtime: python
 api_version: 1
 
@@ -46,3 +46,6 @@ handlers:
 
 - url: /alarm/.*
   script: alarm.py
+
+- url: /wiki_redirect/.*
+  script: wiki_redirect.py
