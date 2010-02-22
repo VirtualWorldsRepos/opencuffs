@@ -3,6 +3,8 @@
 #see LICENSE.txt for details
 #handles urls for redirecting to map them user friendly to the google wiki pages
 
+import logging
+
 import wsgiref.handlers
 from google.appengine.ext import webapp
 
@@ -15,13 +17,15 @@ class Redirect(webapp.RequestHandler):
         # path starts with
         path = self.request.path[len(AppRedirectPath):]
 
+        logging.info("Path of app: #%s#" % self.request.path)
+
         if path == '':
             # emty path, so we want the WikiMainpage, as the base page looks ugly
             TargetULR = WikiAddress + WikiMainPage
         else:
             # User wants a special page, so add it to the base URL
             TargetULR = WikiAddress + path
-            
+
         self.redirect(TargetULR, True)
 
 def main():
