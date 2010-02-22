@@ -12,8 +12,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 
-from updater import FreebieItem
-from distributors import Distributor, Contributor
+from model import FreebieItem, Distributor, Contributor
 
 head = '''
 <html>
