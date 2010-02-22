@@ -12,7 +12,8 @@ import relations
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
-from collardb import AvTokenValue
+
+from model import AvTokenValue
 
 g_owner = "owner" #token for owner
 g_secowner= "secowners" #tokes for secowner
@@ -88,7 +89,7 @@ class MainPage(webapp.RequestHandler):
                     relations.delete(av,"secowns",subbie)
                     # and prepare the answer for sl
                     answer+=2
-            
+
             # updating relation again due to the bug 716: the relations got not always properly updated, so we need to be sure it happens now
             if ((answer==0)|(answer==2)):
                 if (relations.delete(av,"owns",subbie)==1):

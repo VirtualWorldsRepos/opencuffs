@@ -1,5 +1,5 @@
 application: collardata1
-version: 20100221
+version: 20100222
 runtime: python
 api_version: 1
 
@@ -13,12 +13,12 @@ handlers:
 - url: /news/.*
   static_files: static/blank.html
   upload: static/blank.html
-  
+
 - url: /db/.*
   script: collardb.py
-  
+
 - url: /owners/.*
-  script: owners.py  
+  script: owners.py
 
 - url: /removesub/.*
   script: removesub.py
@@ -28,18 +28,18 @@ handlers:
 
 - url: /cleanup/.*
   script: cleanup.py
-  
+
 - url: /remote/.*
   script: remote_stub.py
 
 - url: /remote_api
   script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
   login: admin
-  
+
 - url: /admin/.*
   script: $PYTHON_LIB/google/appengine/ext/admin
   login: admin
-  
+
 - url: /freebielist/.*
   script: freebielist.py
   login: admin

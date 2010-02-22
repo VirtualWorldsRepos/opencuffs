@@ -18,7 +18,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import memcache
 
-from updater import FreebieItem, FreebieDelivery
+from model import FreebieItem, FreebieDelivery
 
 class Deliver(webapp.RequestHandler):
     def post(self):
@@ -56,7 +56,7 @@ class Deliver(webapp.RequestHandler):
 
                 name_version = "%s - %s" % (name, item['version'])
                 rcpt = str(params['rcpt'])
-                
+
                 if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url):
                     self.response.out.write('%s|%s' % (rcpt, name_version))
                 else:
