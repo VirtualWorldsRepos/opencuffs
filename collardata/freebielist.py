@@ -13,11 +13,12 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 
 from updater import FreebieItem
+from distributors import Distributor, Contributor
 
 head = '''
 <html>
 <head>
-<title>Freebie Item List</title>
+<title>%s</title>
 <script src="/static/sorttable.js"></script>
 <style>
 body {
@@ -40,21 +41,60 @@ table.sortable thead {
 </head>
 <body>
 '''
+
 end = '''
 </body>
 </html>
 '''
 
-def GenVeriCode(length=4, chars=string.letters + string.digits):
-    return ''.join([choice(chars) for i in range(length)])
+
+
+class Distributors(webapp.RequestHandler):
+    def get(self):
+        message = '''<h1>List of Distributors</h1>
+<p>This lists all Distributors currently in the distribution system as of %s.</p>
+<table class="sortable" border=\"1\">''' % datetime.datetime.utcnow().isoformat(' ')
+        message += '<tr><th>Row</th><th>Distributor</th><th>Key</th></tr><br />\n'
+        query = Distributor.gql("")
+        dists = []
+        for record in query:
+            s = '<td>%s</td><td>%s</td>\n' % (record.avname, record.avkey)
+            if (s in dists) == False:
+                dists += [s]
+
+        for i in range(0,len(dists)):
+            message += '<tr><td>%d</td>%s' % (i+1, dists[i])
+
+        message += "</table>"
+        self.response.out.write((head % 'Contributor List') + message + end)
+
+
+class Contributors(webapp.RequestHandler):
+    def get(self):
+        message = '''<h1>List of Contributors</h1>
+<p>This lists all Contributors currently in the distribution system as of %s.</p>
+<table class="sortable" border=\"1\">''' % datetime.datetime.utcnow().isoformat(' ')
+        message += '<tr><th>Row</th><th>Contributor</th><th>Key</th></tr><br />\n'
+        query = Contributor.gql("")
+        dists = []
+        for record in query:
+            s = '<td>%s</td><td>%s</td>\n' % (record.avname, record.avkey)
+            if (s in dists) == False:
+                dists += [s]
+
+        for i in range(0,len(dists)):
+            message += '<tr><td>%d</td>%s' % (i+1, dists[i])
+
+        message += "</table>"
+        self.response.out.write((head % 'Contributor List') + message + end)
 
 class MainPage(webapp.RequestHandler):
 
     def get(self):
         message = '''<h1>List of Freebie items</h1>
-<p>This list all item currently in the distribution system as of %s.</p>
+<p>This lists all item currently in the distribution system as of %s.</p>
 <table class="sortable" border=\"1\">''' % datetime.datetime.utcnow().isoformat(' ')
-        message += '<tr><th>Row</th><th>Owner</th><th>Giver ID</th><th>Name</th><th>Version</th><th>Update Date</th><th>Distributor Location</th><br />\n'
+        message += '<tr><th>Row</th><th>Owner</th><th>Giver ID</th><th>Name</th><th>Version</th><th>Update Date</th><th>Distributor Location</th></tr><br />\n'
         query = FreebieItem.gql("")
         content =[]
         for record in query:
@@ -65,17 +105,17 @@ class MainPage(webapp.RequestHandler):
 
         content = sorted(content)
 
-        for i in range(0,len(content)-1):
+        for i in range(0,len(content)):
             message += '<tr><td>%d</td>%s' % (i+1, content[i])
 
         message += "</table>"
+        self.response.out.write((head % 'Freebie Items List') + message + end)
 
 
-        self.response.out.write(head+message+end)
-
-
-application = webapp.WSGIApplication(
-    [('.*', MainPage)
+application = webapp.WSGIApplication([
+    (r'/.*?/distributors',Distributors),
+    (r'/.*?/contributors',Contributors),
+    ('.*', MainPage)
      ],
     debug=True)
 

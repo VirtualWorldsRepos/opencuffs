@@ -26,7 +26,7 @@ class Deliver(webapp.RequestHandler):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
         elif not distributors.Distributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
-            logging.info("Illegal attempt to enqueue item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
+            logging.info("Illegal attempt to request an item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
             #populate a dictionary with what we've been given in post
@@ -44,6 +44,7 @@ class Deliver(webapp.RequestHandler):
                     freebieitem = FreebieItem.gql("WHERE freebie_name = :1", name).get()
                     if freebieitem is None:
                         #could not find item to look up its deliverer.  return an error
+                        logging.error('Error, freebie %s not found. Requested by %s using %s.' % (name, self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name']))
                         self.error(403)
                         return
                     else:
@@ -59,9 +60,12 @@ class Deliver(webapp.RequestHandler):
                 if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url):
                     self.response.out.write('%s|%s' % (rcpt, name_version))
                 else:
+                    logging.error('Enqueing failed for vendor %s, queue entry: %s|%s' % (item['giver'], rcpt, name_version))
                     self.error(403)
             except KeyError:
+                logging.error('Key error for vendor %s, queue entry: %s|%s' % (item['giver'], rcpt, name_version))
                 self.error(403)
+
 
 class AddDist(webapp.RequestHandler):
     def post(self):
