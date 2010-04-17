@@ -16,8 +16,6 @@ from google.appengine.ext import webapp
 from google.appengine.ext import db
 from google.appengine.api import memcache
 
-import yaml
-
 null_key = "00000000-0000-0000-0000-000000000000"
 
 from model import FreebieItem, FreebieDelivery
@@ -37,18 +35,15 @@ class Check(webapp.RequestHandler):
             #logging.info('%s checked %s version %s' % (self.request.headers['X-SecondLife-Owner-Name'], name, version))
 
             token = 'item_%s' % name
-            cacheditem = memcache.get(token)
-            if cacheditem is None:
+            item = memcache.get(token)
+            if item is None:
                 freebieitem = FreebieItem.gql("WHERE freebie_name = :1", name).get()
                 if freebieitem is None:
                     self.response.out.write("NSO %s" % (name))
                     return
                 else:
                     item = {"name":freebieitem.freebie_name, "version":freebieitem.freebie_version, "giver":freebieitem.freebie_giver}
-                    memcache.set(token, yaml.safe_dump(item))
-            else:
-                #pull the item's details out of the yaml'd dict
-                item = yaml.safe_load(cacheditem)
+                    memcache.set(token, item)
 
             thisversion = 0.0
             try:
@@ -106,7 +101,7 @@ class UpdateItem(webapp.RequestHandler):
                 item.put()
             #update item in memcache
             token = 'item_%s' % name
-            memcache.set(token, yaml.safe_dump({"name":name, "version":version, "giver":giverkey}))
+            memcache.set(token, {"name":name, "version":version, "giver":giverkey})
             self.response.out.write('saved')
             logging.info('saved item %s version %s by %s' % (name, version, avname))
 

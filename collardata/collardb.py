@@ -1,5 +1,3 @@
-# Cleo: I suggest to remove comment starting with Cleo
-
 
 #!/usr/bin/python
 #Licensed under the GPLv2 (not later versions)
