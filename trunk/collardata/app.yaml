@@ -49,3 +49,6 @@ handlers:
 
 - url: /wiki_redirect/.*
   script: wiki_redirect.py
+
+- url: /avsync/.*
+  script: avsync.py
