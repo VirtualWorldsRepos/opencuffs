@@ -58,9 +58,9 @@ handlers:
 - url: /.*
   script: remote.py
 
-  admin_console:
+admin_console:
   pages:
   - name: Admin Console
     url: /admin/
   - name: Stats
-     url: /stats/
+    url: /stats/
