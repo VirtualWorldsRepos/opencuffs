@@ -5,7 +5,6 @@
 from google.appengine.ext import db
 from google.appengine.api import memcache
 import logging
-import yaml
 import time
 
 from model import AvTokenValue
@@ -44,14 +43,13 @@ def validvalue(action,key,name,token,value, headers):
         return False
 
     #throttle requests
-    #first load the timestamps, which will be saved in memcache as a yaml list
+    #first load the timestamps, which will be saved in memcache as a list
     historykey = '%s_history' % key
-    histyaml = memcache.get(historykey)
+    history = memcache.get(historykey)
     now = time.time()
     counter = 0
 
-    if histyaml is not None:
-        history = yaml.safe_load(histyaml)
+    if history is not None:
         #throw out any stamps more than a minute old
         for request in history:
             if now - request > 60.0:
@@ -66,7 +64,7 @@ def validvalue(action,key,name,token,value, headers):
     else:
         history = [now]
     #save the new history
-    memcache.set(historykey, yaml.safe_dump(history))
+    memcache.set(historykey, history)
 
     # warn if tokens are longer than the treshhold, not sure if this is needed or about the length yet
     if len(token)>warntokenname:
