@@ -13,6 +13,6 @@ class GoogleSLIds(db.Model):
 class Lookup(db.Model):
   av = db.StringProperty(multiline=False)
   product = db.StringProperty(multiline=False)
-  ownurl = db.StringProperty(multiline=False)
-  securl = db.StringProperty(multiline=False)
-  puburl = db.StringProperty(multiline=False)
+  ownurl = db.StringProperty(multiline=False, indexed=False)
+  securl = db.StringProperty(multiline=False, indexed=False)
+  puburl = db.StringProperty(multiline=False, indexed=False)
