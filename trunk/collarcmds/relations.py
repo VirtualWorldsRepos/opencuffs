@@ -16,11 +16,16 @@ class Relation(db.Model):
     
 def key2name(key):
     """given an av uuid, returns av name.  Returns None if av not found"""
-    av = Av.gql("WHERE id = :1", key).get()
+    av = Av.get_by_key_name("Av:"+key)
+    if av is None:
+        av = Av.gql("WHERE id = :1", key).get()
+        if av:
+            Av(key_name="Av:"+av.id,id = av.id, name = av.name).put()
+            av.delete()
     if av:
         return av.name
     else:
-        return None
+        return "~Old Sub"
 
 def name2key(name):
     """given an av name, returns av uuid.  Returns None if av not found"""
@@ -32,19 +37,9 @@ def name2key(name):
 
 def update_av(id, name):
     """update's av's name if key found, else creates entity.  only use request header data.  POST and PUT data are not trustworthy."""
-    query = Av.gql("WHERE id = :1", id)
-    if query.count() == 0:#doesn't exist. save
-        av = Av(id = id, name = name)    
-        av.put()    
-    elif query.count() == 1:#already exists.  just update the name
-        av = query.get()
-        av.name = name
-        av.put()
-    else:#there's more than one record.  delete them all and just save one
-        for record in query:
-            record.delete()
-        av = Av(id = id, name = name)    
-        av.put()        
+    av = Av.get_by_key_name("Av:"+id)
+    if av is None:
+        Av(key_name="Av:"+id,id = id, name = name).put()
         
     
 def getby_subj_type(subj, type):

@@ -73,7 +73,7 @@ class MainPage(webapp.RequestHandler):
     def get(self):
         #check linden ip
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
-            self.error(403)
+            self.redirect("/webinterface/", False)
         else:
             av = self.request.headers['X-SecondLife-Owner-Key']        
             out = QueueString(av)

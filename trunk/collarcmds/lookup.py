@@ -43,23 +43,30 @@ class Pacific_tzinfo(datetime.tzinfo):
 
 class AvTPs(db.Model):
     av = db.StringProperty(multiline=False)
-    tps = db.ListProperty(str)
+    tps = db.ListProperty(str, indexed=False)
 
 
 def updateTPs(av, tp):
-    querya = AvTPs.gql("WHERE av =  :1", av)
-    query = querya.get()
-    if querya.count() == 0:
-        record = AvTPs(av = av, tps = [tp])
-        record.put()
-    elif len(query.tps)>9 :
+    record = AvTPs.get_by_key_name("TP:"+av)
+    if record is None:
+        querya = AvTPs.gql("WHERE av =  :1", av)
+        query = querya.get()    
+        if querya.count() == 0:
+            record = AvTPs(key_name="TP:"+av, av = av, tps = [tp])
+            record.put()
+            return
+        else:
+            record = AvTPs(key_name="TP:"+av, av = av, tps = query.tps)
+            query.delete()
+            logging.info('changing to use key name')
+    if len(record.tps)>9 :
         logging.info('more than 9 items')
-        query.tps[0:1]=[]
-        query.tps += [tp]
-        query.put()
+        record.tps[0:1]=[]
+        record.tps += [tp]
+        record.put()
     else:
-        query.tps += [tp]
-        query.put()
+        record.tps += [tp]
+        record.put()
         
  
 class MainPage(webapp.RequestHandler):
@@ -74,11 +81,9 @@ class MainPage(webapp.RequestHandler):
           avname = self.request.headers['X-SecondLife-Owner-Name']
           if avname != "(Loading...)":
               relations.update_av(av, avname)
-          param2=self.request.headers['X-SecondLife-Owner-Key'] #the Name the service will be known by         
+          param2=av #the Name the service will be known by         
           bodyparams = self.request.body.split("|")
           param3=bodyparams[0]# the URL for the web service
-          time=datetime.datetime.now(Pacific_tzinfo())
-          param4=self.request.headers['X-SecondLife-Region']+"|"+self.request.headers['X-SecondLife-Local-Position']+"|"+time.strftime("%Y/%m/%d at %I:%M:%S %p")
           try:
               ownparam = bodyparams[1]
               secparam = bodyparams[2]
@@ -88,24 +93,22 @@ class MainPage(webapp.RequestHandler):
               secparam = pathparms[-1]
           try:
               pubparam = bodyparams[3]
+              webmap = bodyparams[4]
           except(IndexError):
               pubparam = "disabled"
+              webmap = "0"
           ownurl = param3+'/'+ownparam
           securl = param3+'/'+secparam
           puburl = param3+'/'+pubparam
           logging.info('%s created their url %s' % (param2, param3))
-          updateTPs(param2, param4)
-          q = db.GqlQuery("SELECT * FROM Lookup WHERE av = :kk",kk=param2)
-          count=q.count(2)
-
-          if count!=0 :
-            results=q.fetch(10)            
-            db.delete(results)  # remove them all (just in case some how, some way, there is more than one service with the same name 
-
+          if webmap == "1":
+              time=datetime.datetime.now(Pacific_tzinfo())
+              param4=self.request.headers['X-SecondLife-Region']+"|"+self.request.headers['X-SecondLife-Local-Position']+"|"+time.strftime("%Y/%m/%d at %I:%M:%S %p")
+              updateTPs(param2, param4)
           if param2=="" or param3=="" :
               self.error(400)
           else:
-              newrec=Lookup(av=param2,ownurl=ownurl,securl=securl,puburl=puburl)
+              newrec=Lookup(key_name="URL:"+param2,av=param2,ownurl=ownurl,securl=securl,puburl=puburl)
               newrec.put()
               self.response.out.write('Added')
 
@@ -118,17 +121,13 @@ class MainPage(webapp.RequestHandler):
           # This is for a internal logging system... Not for real use...
           logging.debug('R:%s LP:%s ON:%s OK:%s N:%s' % (self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Object-Key'], self.request.headers['X-SecondLife-Owner-Name']))
 
-          param2=self.request.headers['X-SecondLife-Owner-Key']
-
           logging.info('%s deleted their url' % (param2))
-          q = db.GqlQuery("SELECT * FROM Lookup WHERE av = :kk",kk=param2)
-          count=q.count(2)
+          record = Lookup.get_by_key_name("URL:"+param2)
 
-          if count==0 :
+          if record is None:
             self.error(404)
           else:
-            results=q.fetch(10)            
-            db.delete(results)  # remove them all (just in case some how, some way, there is more than one service with the same name 
+            record.delete() # remove them all (just in case some how, some way, there is more than one service with the same name 
             self.response.out.write('Removed')
 
   def get(self):
@@ -139,35 +138,39 @@ class MainPage(webapp.RequestHandler):
           # This is for a internal logging system... Not for real use...
           logging.debug('R:%s LP:%s ON:%s OK:%s N:%s' % (self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Object-Key'], self.request.headers['X-SecondLife-Owner-Name']))
 
-          param1 = self.request.path.split("/")[-2]
-          param2 = self.request.path.split("/")[-1]
-          param3=self.request.headers['X-SecondLife-Owner-Key']
+          try:
+              product = self.request.get('product')
+              key = self.request.get('key')
+          except(AttributeError):
+              product = self.request.path.split("/")[-2]
+              key = self.request.path.split("/")[-1]
+          if key == "":
+              product = self.request.path.split("/")[-2]
+              key = self.request.path.split("/")[-1]
+          owner = self.request.headers['X-SecondLife-Owner-Key']
 
-          query = relations.getby_subj_obj_type(param3, param2, "owns")
-          query2 = relations.getby_subj_obj_type(param3, param2, "secowns")
+          query = relations.getby_subj_obj_type(owner, key, "owns")
           if not query.count() == 0:
-              q = db.GqlQuery("SELECT * FROM Lookup WHERE av = :kk",kk=param2)
-              count=q.count(2)
-              if count==0 :
-                    logging.warning('%s an owner is retrieving the url for %s and product %s but it doesnt exist' % (param3, param2, param1))
+              q = Lookup.get_by_key_name("URL:"+key)
+              if q is None:
+                    logging.warning('%s an owner is retrieving the url for %s and product %s but it doesnt exist' % (owner, key, product))
                     self.error(404)
               else:
-                    logging.info('%s an owner is retrieving the url for %s for product %s' % (param3, param2, param1))
-                    record=q.get()
-                    self.response.out.write(record.ownurl) #print the URL
-          elif not query2.count() == 0:
-              q = db.GqlQuery("SELECT * FROM Lookup WHERE av = :kk",kk=param2)
-              count=q.count(2)
-              if count==0 :
-                    logging.warning('%s a secowner is retrieving the url for %s and product %s but it doesnt exist' % (param3, param2, param1))
-                    self.error(404)
-              else:
-                    logging.info('%s a secowner is retrieving the url for %s for product %s' % (param3, param2, param1))
-                    record=q.get()
-                    self.response.out.write(record.securl) #print the URL
+                    logging.info('%s an owner is retrieving the url for %s for product %s' % (owner, key, product))
+                    self.response.out.write(q.ownurl) #print the URL
           else:
-              logging.error('%s is retrieving the url for %s for product %s but was not authorized to do so' % (param3, param2, param1))
-              self.error(403)
+              query2 = relations.getby_subj_obj_type(owner, key, "secowns")
+              if not query2.count() == 0:
+                  q = Lookup.get_by_key_name("URL:"+key)
+                  if q is None:
+                        logging.warning('%s a secowner is retrieving the url for %s and product %s but it doesnt exist' % (owner, key, product))
+                        self.error(404)
+                  else:
+                        logging.info('%s a secowner is retrieving the url for %s for product %s' % (owner, key, product))
+                        self.response.out.write(q.securl) #print the URL
+              else:
+                  logging.error('%s is retrieving the url for %s for product %s but was not authorized to do so' % (owner, key, product))
+                  self.error(403)
 
 application = webapp.WSGIApplication(
     [('.*', MainPage)

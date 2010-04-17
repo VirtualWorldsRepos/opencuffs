@@ -125,6 +125,10 @@ param2 = ""
 
 class MainPage(webapp.RequestHandler):
   def get(self):
+      if self.request.host.split(".")[-2] == "mycollar":
+          googleMapKey = "ABQIAAAAllmRirwxU-abqO4akMFFPhTmk8oiZWNMDVJqQZiH754NOJiLQhQs9kkQl_27ijrhPqU2i-yBRH-X7A"
+      elif self.request.host.split(".")[-2] == "appspot":
+          googleMapKey = "ABQIAAAAllmRirwxU-abqO4akMFFPhRlOb26qSyU154aZeLwOrF4C7-DphS23YsdNRnYYJkSxtcIV2PDrFFQuw"
       user = users.get_current_user()
       userid = user.user_id()
       useremail = user.email()
@@ -202,7 +206,7 @@ class MainPage(webapp.RequestHandler):
 <head>
 <title>OpenCollar webinterface for '''+subname+'''</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-<script src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAllmRirwxU-abqO4akMFFPhRlOb26qSyU154aZeLwOrF4C7-DphS23YsdNRnYYJkSxtcIV2PDrFFQuw"  type="text/javascript"></script>
+<script src="http://maps.google.com/maps?file=api&v=2&key='''+ googleMapKey +'''"  type="text/javascript"></script>
 <script src="http://slurl.com/_scripts/slmapapi.js" type="text/javascript"></script>
 <link rel="stylesheet" type="text/css" href="http://slurl.com/_styles/MAIN.css" />
 <style>
@@ -296,12 +300,12 @@ count = count + 1;
    var script = document.createElement('script');
    script.id = 'uploadScript';
    script.type = 'text/javascript';
-   script.src = '''+"'"+cmdurl+"?'"+'''+cmd;
+   script.src = '''+"'"+cmdurl+"/00000000-0000-0000-0000-000000000000/cmdreceived?'"+'''+cmd;
    body.appendChild(script);
 }
 function cmdreceived(cmd)
 {
- if (cmd == 'ping')
+ if (cmd == 'pong')
  {
      collarworking();
  }
@@ -327,7 +331,7 @@ function javascriptworking()
     var script = document.createElement('script');
     script.id = 'uploadScript';
     script.type = 'text/javascript';
-    script.src = '''+"'"+cmdurl+"?'"+'''+'ping';
+    script.src = '''+"'"+cmdurl+"/00000000-0000-0000-0000-000000000000/cmdreceived?'"+'''+'ping';
     body.appendChild(script);
 }
 function collarworking()
@@ -349,9 +353,7 @@ function loadmap() {
   // creates the icons
   var yellow_dot_image = new Img("http://slurl.com/examples/b_map_yellow.gif", 9, 9);
   var yellow_icon = new Icon(yellow_dot_image);
-  var all_images = [yellow_icon, yellow_icon, yellow_icon, yellow_icon, yellow_icon, 
-
-yellow_icon];
+  var all_images = [yellow_icon, yellow_icon, yellow_icon, yellow_icon, yellow_icon, yellow_icon];
 '''
                 mid = '''
 }
@@ -390,23 +392,8 @@ application = webapp.WSGIApplication(
      ], 
     debug=True) 
 
-def real_main():
+def main():
   run_wsgi_app(application)
-  
-def profile_main():
- # This is the main function for profiling 
- # We've renamed our original main() above to real_main()
- import cProfile, pstats, StringIO
- prof = cProfile.Profile()
- prof = prof.runctx("real_main()", globals(), locals())
- stream = StringIO.StringIO()
- stats = pstats.Stats(prof, stream=stream)
- stats.sort_stats("time")  # Or cumulative
- stats.print_stats(80)  # 80 = how many to print
- # The rest is optional.
- # stats.print_callees()
- # stats.print_callers()
- logging.info("Profile data:\n%s", stream.getvalue())
 
 if __name__ == "__main__":
-  profile_main()
+  main()

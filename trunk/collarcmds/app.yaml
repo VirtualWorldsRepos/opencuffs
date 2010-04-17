@@ -1,5 +1,5 @@
 application: collarcmds1
-version: starship
+version: 20100404
 runtime: python
 api_version: 1
 
@@ -24,7 +24,7 @@ handlers:
 
 - url: /map/.*
   script: map.py
-  login: required 
+  login: required
 
 - url: /owners/.*
   script: owners.py

@@ -38,63 +38,68 @@ class MainPage(webapp.RequestHandler):
         if count==0 :
             cmdurl=''
             '''Need to put error here'''
+            self.error(403)
         else:
             record=q.get()
             cmdurl = record.puburl
-            if cmdurl[-8:-1] == "disabled":
+            logging.info(cmdurl[-8:])
+            if cmdurl[-8:] == "disabled":
                 '''Show a diffrent page'''
-                pass
-        q = db.GqlQuery("SELECT * FROM Av WHERE id = :kk",kk=param2)
-        count=q.count(2)
-        if count==0 :
-            subname='Error finding name'
-            '''Need to put error here'''
-        else:
-            record=q.get()
-            subname = record.name
-        q = db.GqlQuery("SELECT * FROM AvTPs WHERE av = :kk",kk=param2)
-        count=q.count(2)
-        if count==0 :
-              logging.warning('%s is retrieving the url for %s but it doesnt exist' % (useremail, param2))
-              self.error(404)
-        else:
-              logging.info('%s is retrieving the url for %s' % (useremail, param2))
-              record=q.get()
-              
-              tps = ''
-              links = ''
-              xlist = []
-              ylist = []
-              for a in record.tps:
-                  b = a.split("|")
-                  globcor=b[0].split("(")[-1]
-                  loccor=b[1].split(",")
-                  xloc=loccor[0].strip("(")
-                  yloc=loccor[1]
-                  zloc=loccor[2].strip(")")
-                  x=str(float(globcor.split(",")[0])/256+float(xloc)/256)
-                  y=str(float(globcor.split(",")[1].strip(")"))/256+float(yloc)/256)
-                  mapcor=x+", "+y+")"
-                  xlist += [Decimal(x)]
-                  ylist += [Decimal(y)]
-                  tps += 'mapWindow = new MapWindow("'+subname+' was at '+b[0].split("(")[0]+' ('+str(int(float(xloc)))+', '+str(int(float(yloc)))+', '+str(int(float(zloc)))+') on '+b[2]+'");\n'
-                  tps += 'marker = new Marker(all_images, new XYPoint('+mapcor+');\n'
-                  tps += 'mapInstance.addMarker(marker, mapWindow);\n'
-                  links += '<p><a href="javascript: mapInstance.panOrRecenterToSLCoord(new XYPoint('+mapcor+', true);"> '+subname+' was at '+b[0].split("(")[0]+' ('+str(int(float(xloc)))+', '+str(int(float(yloc)))+', '+str(int(float(zloc)))+') on '+b[2]+'</a></p>\n'
-              xcenter = str((max(xlist)-min(xlist))/2+min(xlist))
-              ycenter = str((max(ylist)-min(ylist))/2+min(ylist))
-              xdiff=max(xlist)-min(xlist)
-              ydiff=max(ylist)-min(ylist)
-              if ydiff == 0 and xdiff == 0:
-                  scale='2'
-              elif xdiff>ydiff :
-                  scale=str(ceil(log(xdiff,2)))
-              else:
-                  scale=str(ceil(log(ydiff,2)))
-              if scale>8:
-                  xcenter = str(sum(xlist)/len(xlist))
-                  ycenter = str(sum(ylist)/len(ylist))
-              header = '''
+                logging.info('%s is trying to get the public page for %s but it is disabled.' % (useremail, param2))
+                self.error(403)
+            else:
+                q = db.GqlQuery("SELECT * FROM Av WHERE id = :kk",kk=param2)
+                count=q.count(2)
+                if count==0 :
+                    subname='Error finding name'
+                    '''Need to put error here'''
+                else:
+                    record=q.get()
+                    subname = record.name
+                q = db.GqlQuery("SELECT * FROM AvTPs WHERE av = :kk",kk=param2)
+                count=q.count(2)
+                if count==0 :
+                      logging.warning('%s is retrieving the url for %s but it doesnt exist' % (useremail, param2))
+                      self.error(404)
+                      exit
+                else:
+                      logging.info('%s is retrieving the url for %s' % (useremail, param2))
+                      record=q.get()
+                      
+                      tps = ''
+                      links = ''
+                      xlist = []
+                      ylist = []
+                      for a in record.tps:
+                          b = a.split("|")
+                          globcor=b[0].split("(")[-1]
+                          loccor=b[1].split(",")
+                          xloc=loccor[0].strip("(")
+                          yloc=loccor[1]
+                          zloc=loccor[2].strip(")")
+                          x=str(float(globcor.split(",")[0])/256+float(xloc)/256)
+                          y=str(float(globcor.split(",")[1].strip(")"))/256+float(yloc)/256)
+                          mapcor=x+", "+y+")"
+                          xlist += [Decimal(x)]
+                          ylist += [Decimal(y)]
+                          tps += 'mapWindow = new MapWindow("'+subname+' was at '+b[0].split("(")[0]+' ('+str(int(float(xloc)))+', '+str(int(float(yloc)))+', '+str(int(float(zloc)))+') on '+b[2]+'");\n'
+                          tps += 'marker = new Marker(all_images, new XYPoint('+mapcor+');\n'
+                          tps += 'mapInstance.addMarker(marker, mapWindow);\n'
+                          links += '<p><a href="javascript: mapInstance.panOrRecenterToSLCoord(new XYPoint('+mapcor+', true);"> '+subname+' was at '+b[0].split("(")[0]+' ('+str(int(float(xloc)))+', '+str(int(float(yloc)))+', '+str(int(float(zloc)))+') on '+b[2]+'</a></p>\n'
+                      xcenter = str((max(xlist)-min(xlist))/2+min(xlist))
+                      ycenter = str((max(ylist)-min(ylist))/2+min(ylist))
+                      xdiff=max(xlist)-min(xlist)
+                      ydiff=max(ylist)-min(ylist)
+                      if ydiff == 0 and xdiff == 0:
+                          scale='2'
+                      elif xdiff>ydiff :
+                          scale=str(ceil(log(xdiff,2)))
+                      else:
+                          scale=str(ceil(log(ydiff,2)))
+                      if scale>8:
+                          xcenter = str(sum(xlist)/len(xlist))
+                          ycenter = str(sum(ylist)/len(ylist))
+                      header = '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
@@ -194,12 +199,12 @@ count = count + 1;
    var script = document.createElement('script');
    script.id = 'uploadScript';
    script.type = 'text/javascript';
-   script.src = '''+"'"+cmdurl+"?'"+'''+cmd;
+   script.src = '''+"'"+cmdurl+"/00000000-0000-0000-0000-000000000000/cmdreceived?'"+'''+cmd;
    body.appendChild(script);
 }
 function cmdreceived(cmd)
 {
- if (cmd == 'ping')
+ if (cmd == 'pong')
  {
      collarworking();
  }
@@ -225,27 +230,12 @@ function javascriptworking()
     var script = document.createElement('script');
     script.id = 'uploadScript';
     script.type = 'text/javascript';
-    script.src = '''+"'"+cmdurl+"?'"+'''+'ping';
+    script.src = '''+"'"+cmdurl+"/00000000-0000-0000-0000-000000000000/cmdreceived?'"+'''+'ping';
     body.appendChild(script);
 }
 function collarworking()
 {
-    document.getElementById("form").innerHTML='Type any chat command with out the prefix ie. if you send nadu the sub will assume nadu. To send a message to the sub type 'tosub:' then your message.<br><form action="javascript:submit();">Cmd <input type="text" id="cmd" size="100" maxlength="255"></form>';
-}
-var g_aData = {};
-function Settings(sData,iMore,iPage)
-{
-    var lTemp;
-    var sToken;
-    var sValue;
-    var lData = sData.split("|");
-    for( var i = 0; i < lData.length; i++ )
-    {
-        lTemp = lData[i].split("=",2);
-        sToken = lTemp[0];
-        sValue = lTemp[1];
-        g_aData[sToken] = sValue;
-    }
+    document.getElementById("form").innerHTML='<form action="javascript:submit();">Cmd <input type="text" id="cmd" size="100" maxlength="255"></form>';
 }
 </script>
 
@@ -262,11 +252,9 @@ function loadmap() {
   // creates the icons
   var yellow_dot_image = new Img("http://slurl.com/examples/b_map_yellow.gif", 9, 9);
   var yellow_icon = new Icon(yellow_dot_image);
-  var all_images = [yellow_icon, yellow_icon, yellow_icon, yellow_icon, yellow_icon, 
-
-yellow_icon];
+  var all_images = [yellow_icon, yellow_icon, yellow_icon, yellow_icon, yellow_icon, yellow_icon];
 '''
-              mid = '''
+                      mid = '''
 }
 </script>
 </head>
@@ -281,7 +269,7 @@ yellow_icon];
 <div id="ownerlist">
 <br />
 '''+'</div><div id="map-container"></div><div id="tplist">'
-              end = '''
+                      end = '''
 </div>
 <div id="form">
 JavaScript does not seem to be enabled.
@@ -290,8 +278,7 @@ JavaScript does not seem to be enabled.
 </div>
 </body>
 '''
-
-              self.response.out.write(header+tps+mid+links+end) #print the map
+                      self.response.out.write(header+tps+mid+links+end) #print the map
 
 #      else:
 #        logging.warning('%s is not owned by userid: %s' % (parm2,userid))
@@ -303,23 +290,8 @@ application = webapp.WSGIApplication(
      ], 
     debug=True) 
 
-def real_main():
+def main():
   run_wsgi_app(application)
-  
-def profile_main():
- # This is the main function for profiling 
- # We've renamed our original main() above to real_main()
- import cProfile, pstats, StringIO
- prof = cProfile.Profile()
- prof = prof.runctx("real_main()", globals(), locals())
- stream = StringIO.StringIO()
- stats = pstats.Stats(prof, stream=stream)
- stats.sort_stats("time")  # Or cumulative
- stats.print_stats(80)  # 80 = how many to print
- # The rest is optional.
- # stats.print_callees()
- # stats.print_callers()
- logging.info("Profile data:\n%s", stream.getvalue())
 
 if __name__ == "__main__":
-  profile_main()
+  main()
