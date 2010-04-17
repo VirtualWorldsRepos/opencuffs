@@ -145,17 +145,19 @@ class MainPage(webapp.RequestHandler):
           q = db.GqlQuery("SELECT * FROM AvTPs WHERE av = :kk",kk=param2)
           count=q.count(2)
           if count==0 :
-                logging.warning('%s is retrieving the url for %s but it doesnt exist' % (useremail, param2))
-                self.error(404)
+                logging.warning('%s is retrieving the url for %s but tps doesnt exist' % (useremail, param2))
+                tpstmp=[u'not having web maps enabled so you see The Temple of the Collar, Keraxic(462336, 305920)|(55, 210, 23)|2010/01/01 at 00:00:00 AM']
           else:
                 logging.info('%s is retrieving the url for %s' % (useremail, param2))
                 record=q.get()
-                
+                tpstmp = record.tps
+          if True:
                 tps = ''
                 links = ''
                 xlist = []
                 ylist = []
-                for a in record.tps:
+                
+                for a in tpstmp:
                     b = a.split("|")
                     globcor=b[0].split("(")[-1]
                     loccor=b[1].split(",")
@@ -336,7 +338,7 @@ function javascriptworking()
 }
 function collarworking()
 {
-    document.getElementById("form").innerHTML='<form action="javascript:submit();">Cmd <input type="text" id="cmd" size="100" maxlength="255"></form>';
+    document.getElementById("form").innerHTML='<form action="javascript:submit();">Cmd <input type="text" id="cmd" size="100" maxlength="255"><input type="submit" /></form>';
 }
 </script>
 
@@ -369,7 +371,7 @@ function loadmap() {
 </div>
 <div id="ownerlist">
 <br />
-'''+ownerlist+'</div><div id="map-container"></div><div id="tplist">'
+'''+ownerlist+'<br /><br /></div><div id="map-container"></div><div id="tplist">'
                 end = '''
 </div>
 <div id="form">

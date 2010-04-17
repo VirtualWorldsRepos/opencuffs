@@ -43,8 +43,8 @@ end = '''
 </html>
 '''
 form = '''
-<form name="username" action="http://starship.latest.collarcmds.appspot.com/webinterface/" method="post">
-SL Username:
+<form name="username" action="/webinterface/" method="post">
+Verify an account you own. Enter your user name:
 <input type="text" name="username" />
 <input type="submit" value="Submit" />
 </form>
