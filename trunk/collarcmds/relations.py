@@ -1,4 +1,5 @@
 import logging
+import time
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
 from google.appengine.api import memcache
@@ -33,11 +34,11 @@ def key2name(key):
     if av:
         return av.name
     else:
-        logging.info("Fetching name from data server for: %s" % key)
+        logging.info("Fetching name from data server for: %s (Start time: %f)" % (key, time.time()))
 
-        fetchanswer = urlfetch.fetch(dataurl + '/avsync/getname', payload='%s' % key, method="PUT", headers={'sharedpass': sharedpass})
+        fetchanswer = urlfetch.fetch(dataurl + '/avsync/getname?key=%s' % key, method="GET", headers={'sharedpass': sharedpass})
         if fetchanswer.status_code == 200 and fetchanswer.content != "":
-            logging.info("Answer received: %s" % fetchanswer.content)
+            logging.info("Answer received: %s (End time %f)" % (fetchanswer.content, time.time()))
             Av(key_name="Av:" + key,id = key, name = fetchanswer.content).put()
             return fetchanswer.content
         else:
