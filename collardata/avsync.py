@@ -1,4 +1,5 @@
 import logging
+import cgi
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
 from google.appengine.api import memcache
@@ -22,11 +23,11 @@ sharedpass = AppSettings.get_or_insert("sharedpass", value="sharedpassword").val
 cmdurl = AppSettings.get_or_insert("cmdurl", value="http://yourcmdapp.appspot.com").value
 
 class GetName2Key(webapp.RequestHandler):
-    def put(self):
+    def get(self):
         if (self.request.headers['sharedpass'] == sharedpass):
-            body = self.request.body
-            logging.info('Key2name request for %s' % (body))
-            name = relations.key2name(body)
+            key = cgi.escape(self.request.get('key'))
+            logging.info('Key2name request for %s' % (key))
+            name = relations.key2name(key)
             if name:
                 logging.info('Resolved as %s' % (name))
                 self.response.out.write(name)
@@ -38,7 +39,6 @@ class GetName2Key(webapp.RequestHandler):
         else:
             self.error(403)
             logging.error('wrong shared password expecting %s received %s ip address' % (sharedpass,self.request.headers['sharedpass'],os.environ['REMOTE_ADDR']))
-
 
 
 class MainPage(webapp.RequestHandler):
