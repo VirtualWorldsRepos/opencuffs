@@ -10,13 +10,15 @@ import distributors
 import logging
 import tools
 
+import yaml
+
 import wsgiref.handlers
 from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import memcache
 
-from model import FreebieItem, FreebieDelivery
+from updater import FreebieItem, FreebieDelivery
 
 class Deliver(webapp.RequestHandler):
     def post(self):
@@ -37,8 +39,8 @@ class Deliver(webapp.RequestHandler):
             try:
                 name = params['objname']
                 token = 'item_%s' % name
-                item = memcache.get(token)
-                if item is None:
+                cacheditem = memcache.get(token)
+                if cacheditem is None:
                     freebieitem = FreebieItem.gql("WHERE freebie_name = :1", name).get()
                     if freebieitem is None:
                         #could not find item to look up its deliverer.  return an error
@@ -47,11 +49,14 @@ class Deliver(webapp.RequestHandler):
                         return
                     else:
                         item = {"name":freebieitem.freebie_name, "version":freebieitem.freebie_version, "giver":freebieitem.freebie_giver}
-                        memcache.set(token, item)
+                        memcache.set(token, yaml.safe_dump(item))
+                else:
+                    #pull the item's details out of the yaml'd dict
+                    item = yaml.safe_load(cacheditem)
 
                 name_version = "%s - %s" % (name, item['version'])
                 rcpt = str(params['rcpt'])
-
+                
                 if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url):
                     self.response.out.write('%s|%s' % (rcpt, name_version))
                 else:
