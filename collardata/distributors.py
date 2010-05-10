@@ -6,7 +6,13 @@ from google.appengine.ext import db
 from google.appengine.api import memcache
 import logging
 
-from model import Distributor, Contributor
+class Distributor(db.Model):
+    avname = db.StringProperty()
+    avkey = db.StringProperty()
+
+class Contributor(db.Model):
+    avname = db.StringProperty()
+    avkey = db.StringProperty()
 
 def Distributor_authorized(av):
     #True if av is on the authorized distributor list, else False
@@ -16,7 +22,7 @@ def Distributor_authorized(av):
         #dist is not in memcache, check db
         dbrecord = Distributor.gql('WHERE avkey = :1', av).get()
         if dbrecord is None:
-            memcache.set(token, False)
+            memcache.set(token, False)            
             return False
         else:
             memcache.set(token, True)
@@ -35,7 +41,7 @@ def Distributor_add(av, name):
         NewDist.put()
     token = "dist_auth_%s" % av
     memcache.set(token, True)
-
+        
 def Distributor_delete(av, name):
     record = Distributor.gql('WHERE avkey = :1', av).get()
     if record is not None:

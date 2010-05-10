@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 #Licensed under the GPLv2 (not later versions)
 #see LICENSE.txt for details
@@ -34,13 +35,11 @@ class GetSubs(webapp.RequestHandler):
                 id = sub.obj_id
                 if id not in subdict:
                     subdict[id] = relations.key2name(id)
-                    q = db.GqlQuery("SELECT * FROM Lookup WHERE av = :kk",kk=id)
-                    count=q.count(2)
-                    if count==0 :
+                    q = Lookup.get_by_key_name("URL:"+id)
+                    if q is None :
                         suburldict[id] = 'None'
                     else:
-                        record=q.get()
-                        suburldict[id] = record.ownurl
+                        suburldict[id] = q.ownurl
                 else:
                     #delete duplicates
                     sub.delete()
@@ -50,13 +49,11 @@ class GetSubs(webapp.RequestHandler):
                 id = sub.obj_id
                 if id not in subdict:#since you can be both an owner and a secowner, ignore those here already in the owner list
                     subdict[id] = relations.key2name(id)
-                    q = db.GqlQuery("SELECT * FROM Lookup WHERE av = :kk",kk=id)
-                    count=q.count(2)
-                    if count==0 :
+                    q = Lookup.get_by_key_name("URL:"+id)
+                    if q is None :
                         suburldict[id] = 'None'
                     else:
-                        record=q.get()
-                        suburldict[id] = record.securl
+                        suburldict[id] = q.securl
             currenttime = time.time()
             out = ''
             subsorted = sorted(subdict.items(), key=itemgetter(1))

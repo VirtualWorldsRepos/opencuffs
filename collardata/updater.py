@@ -16,46 +16,62 @@ from google.appengine.ext import webapp
 from google.appengine.ext import db
 from google.appengine.api import memcache
 
+import yaml
+
 null_key = "00000000-0000-0000-0000-000000000000"
 
-from model import FreebieItem, FreebieDelivery
+class FreebieItem(db.Model):
+    freebie_name = db.StringProperty(required=True)
+    freebie_version = db.StringProperty(required=True)
+    freebie_giver = db.StringProperty(required=True)
+    freebie_owner = db.StringProperty(required=False)
+    freebie_timedate = db.DateTimeProperty(required=False)
+    freebie_location = db.StringProperty(required=False)
+    
+class FreebieDelivery(db.Model):
+    giverkey = db.StringProperty(required=True)
+    rcptkey = db.StringProperty(required=True)
+    itemname = db.StringProperty(required=True)#in form "name - version"
 
 
 class Check(webapp.RequestHandler):
     def get(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        else:
+        else:        
             self.response.headers['Content-Type'] = 'text/plain'
             #look for an item with the requested name
-            name = cgi.escape(self.request.get('object'))
+            name = cgi.escape(self.request.get('object'))    
             version = cgi.escape(self.request.get('version'))
             update = cgi.escape(self.request.get('update'))
 
             #logging.info('%s checked %s version %s' % (self.request.headers['X-SecondLife-Owner-Name'], name, version))
-
+            
             token = 'item_%s' % name
-            item = memcache.get(token)
-            if item is None:
+            cacheditem = memcache.get(token)
+            if cacheditem is None: 
                 freebieitem = FreebieItem.gql("WHERE freebie_name = :1", name).get()
                 if freebieitem is None:
                     self.response.out.write("NSO %s" % (name))
                     return
                 else:
                     item = {"name":freebieitem.freebie_name, "version":freebieitem.freebie_version, "giver":freebieitem.freebie_giver}
-                    memcache.set(token, item)
-
+                    memcache.set(token, yaml.safe_dump(item))
+            else:
+                #pull the item's details out of the yaml'd dict
+                item = yaml.safe_load(cacheditem)
+                
             thisversion = 0.0
             try:
                 thisversion = float(version)
             except ValueError:
                 avname = self.request.headers['X-SecondLife-Owner-Name']
                 logging.error('%s is using %s with bad version "%s" and will be sent an update' % (avname, name, version))
-
+                
             if thisversion < float(item['version']):
                 #get recipient key from http headers or request
                 rcpt = self.request.headers['X-SecondLife-Owner-Key']
-
+                
                 #enqueue delivery, if queue does not already contain this delivery
                 name_version = "%s - %s" % (name, item['version'])
                 if update != "no":
@@ -68,7 +84,7 @@ class Check(webapp.RequestHandler):
                 #in the future return null key instead of giver's key
                 self.response.out.write("%s|%s - %s" % (null_key, name, item['version']))
             else:
-                self.response.out.write('current')
+                self.response.out.write('current')       
 
 class UpdateItem(webapp.RequestHandler):
     def get(self):
@@ -78,8 +94,8 @@ class UpdateItem(webapp.RequestHandler):
             logging.warning("Illegal attempt to update item from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:
-            self.response.headers['Content-Type'] = 'text/plain'
-            name = cgi.escape(self.request.get('object'))
+            self.response.headers['Content-Type'] = 'text/plain'            
+            name = cgi.escape(self.request.get('object'))    
             version = cgi.escape(self.request.get('version'))
             giverkey = self.request.headers['X-SecondLife-Object-Key']
             avname = self.request.headers['X-SecondLife-Owner-Name']
@@ -87,7 +103,7 @@ class UpdateItem(webapp.RequestHandler):
             timestring = datetime.datetime.utcnow()
 
             #look for an existing item with that name
-            items = FreebieItem.gql("WHERE freebie_name = :1", name)
+            items = FreebieItem.gql("WHERE freebie_name = :1", name)   
             item = items.get()
             if (item == None):
                 newitem = FreebieItem(freebie_name = name, freebie_version = version, freebie_giver = giverkey, freebie_owner = avname, freebie_timedate = timestring, freebie_location = location)
@@ -101,10 +117,10 @@ class UpdateItem(webapp.RequestHandler):
                 item.put()
             #update item in memcache
             token = 'item_%s' % name
-            memcache.set(token, {"name":name, "version":version, "giver":giverkey})
-            self.response.out.write('saved')
+            memcache.set(token, yaml.safe_dump({"name":name, "version":version, "giver":giverkey}))
+            self.response.out.write('saved')    
             logging.info('saved item %s version %s by %s' % (name, version, avname))
-
+        
 class DeliveryQueue(webapp.RequestHandler):
     def get(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
@@ -121,7 +137,7 @@ class DeliveryQueue(webapp.RequestHandler):
             logging.info('%s (%s) from %s checked' % (givername, giverkey, avname))
 
 # to enable/disable the update routine fast, only need to update old records
-            if (False):
+            if (False): 
                 timestring = datetime.datetime.utcnow()
                 location = '%s @ %s' % (self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position'])
 

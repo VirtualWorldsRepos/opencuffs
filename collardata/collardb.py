@@ -1,3 +1,5 @@
+# Cleo: I suggest to remove comment starting with Cleo
+
 
 #!/usr/bin/python
 #Licensed under the GPLv2 (not later versions)
@@ -25,7 +27,10 @@ from google.appengine.api import memcache
 
 alltoken = "_all"
 
-from model import AvTokenValue
+class AvTokenValue(db.Model):
+    av = db.StringProperty()
+    token = db.StringProperty()
+    value = db.TextProperty()
 
 
 def CheckMemoryUse(av, uservalue, oldvalue):
@@ -51,12 +56,12 @@ def CheckMemoryUse(av, uservalue, oldvalue):
         #no value in memcache we have to calculate it
         size=0
 
-        # query all stored values
+        # query all stored values	
         query = AvTokenValue.gql("WHERE av = :1", av)
         for record in query:
             # and sum up their length
             size+=len(record.value)
-
+            
 		# make sure we do not sume up values, if a token was already stored and just gets updated
         if size+len(uservalue)-len(oldvalue)>allowed_quota:
             logging.warning('Quota from %s exceeded: %d' % (av,size+len(uservalue)-len(oldvalue)))
@@ -88,7 +93,7 @@ def SubstractMemoryUse(av, uservalue):
         size=int(cachedata)-len(uservalue)
         #logging.info('Memcache found for %s: reduced to %d' % (av, size))
         memcache.replace(cachekey, str(size), 3600, 0)
-
+        
 class MainPage(webapp.RequestHandler):
     def get(self):
         #check that we're coming from an LL ip
@@ -125,7 +130,7 @@ class MainPage(webapp.RequestHandler):
                             self.response.out.write(record.value)
                         else:
                             self.error(404)
-
+                
     def put(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
@@ -161,8 +166,8 @@ class MainPage(webapp.RequestHandler):
                             logging.info('creating new relation with %s of type %s' % (keys[i], type))
                             relations.create_unique(keys[i], type, av)
                             #parse the value, create a relation for each
-                    self.response.set_status(202)#accepted
-
+                    self.response.set_status(202)#accepted  
+            
     def delete(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
@@ -182,7 +187,7 @@ class MainPage(webapp.RequestHandler):
                         for record in query:
                             record.delete()
                         relations.del_by_obj(av)
-
+                        
                         ClearMemoryUse(av)
                     else:
                         self.error(404)
@@ -200,8 +205,8 @@ class MainPage(webapp.RequestHandler):
 
 
 application = webapp.WSGIApplication(
-    [('/.*', MainPage)],
-    debug=True)
+    [('/.*', MainPage)], 
+    debug=True) 
 
 def main():
     run_wsgi_app(application)

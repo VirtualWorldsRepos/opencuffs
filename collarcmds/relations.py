@@ -42,7 +42,7 @@ def key2name(key):
             Av(key_name="Av:" + key,id = key, name = fetchanswer.content).put()
             return fetchanswer.content
         else:
-            logging.warning("Could not be resolved or answer took too long!")
+            logging.warning("Could not be resolved or answer took too long! Error %d; Time: %f, Content:\n%s" % (fetchanswer.status_code, time.time(), fetchanswer.content))
             return "~Old Sub"
 
 def name2key(name):
