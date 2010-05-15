@@ -29,15 +29,21 @@ class AvTokenValue(db.Model):
     av = db.StringProperty()
     token = db.StringProperty()
     value = db.TextProperty()
-    
+
 # storage of items avail throughout the vendor system
 class VendorItem(db.Model):
     item_name = db.StringProperty(required=True)
     item_version = db.StringProperty(required=True)
     item_giver = db.StringProperty(required=True)
     item_owner = db.StringProperty(required=True)
-    item_url = db.StringProperty(required=True)
     item_lastupdate = db.IntegerProperty(required=True)
+
+class DistributorBox(db.Model):
+    box_key = db.StringProperty(required=True)
+    box_url = db.StringProperty(required=True)
+    box_owner = db.StringProperty(required=True)
+    box_lastupdate = db.IntegerProperty(required=True)
+    box_lastping = db.IntegerProperty(required=True)
 
 # storage of textures for the disribution system, will be handled fromone cetral server
 class VendorTexture(db.Model):
@@ -52,7 +58,7 @@ class VendorTexture(db.Model):
 class GenericStorage(db.Model):
     token = db.StringProperty(required=True)
     value  = db.StringProperty(required=True)
-    
+
 def GenericStorage_store(generic_token, generic_value):
     memtoken = "genstore_%s" % generic_token
     record = GenericStorage.gql('WHERE token = :1', generic_token).get()
@@ -72,13 +78,12 @@ def GenericStorage_get(generic_token):
         record = GenericStorage.gql('WHERE token = :1', generic_token).get()
         if record is not None:
             value = record.value
-            memcache.set(token,value)
-            logging.info("Generic token '%s' retrieved, Value: %s" % (generic_token,value))
+            logging.info("Generic token '%s' retrieved from DB, Value: %s" % (generic_token,value))
             return value
         else:
             logging.info("Generic token '%s' not found" % (generic_token))
             return ''
     else:
-        logging.info("Generic token '%s' retrieved, Value: %s" % (generic_token,value))
+        logging.info("Generic token '%s' retrieved from Memcache, Value: %s" % (generic_token,value))
         return value
 

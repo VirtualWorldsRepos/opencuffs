@@ -1,0 +1,28 @@
+application: openvendor1
+version: 20100515
+runtime: python
+api_version: 1
+
+handlers:
+
+- url: /vendor/.*
+  script: vendorsystem.py
+
+- url: /remote_api
+  script: $PYTHON_LIB/google/appengine/ext/remote_api/handler.py
+  login: admin
+
+- url: /admin/.*
+  script: $PYTHON_LIB/google/appengine/ext/admin
+  login: admin
+
+- url: /stats.*
+  script: $PYTHON_LIB/google/appengine/ext/appstats/ui.py
+  login: admin
+
+admin_console:
+  pages:
+  - name: Admin Console
+    url: /admin/
+  - name: Stats
+    url: /stats/
