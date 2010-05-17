@@ -1,5 +1,5 @@
 application: collardata1
-version: 20100420
+version: 20100510
 runtime: python
 api_version: 1
 
@@ -40,6 +40,10 @@ handlers:
   script: $PYTHON_LIB/google/appengine/ext/admin
   login: admin
 
+- url: /stats.*
+  script: $PYTHON_LIB/google/appengine/ext/appstats/ui.py
+  login: admin
+
 - url: /freebielist/.*
   script: freebielist.py
   login: admin
@@ -52,3 +56,10 @@ handlers:
 
 - url: /avsync/.*
   script: avsync.py
+
+admin_console:
+  pages:
+  - name: Admin Console
+    url: /admin/
+  - name: Stats
+    url: /stats/

@@ -35,7 +35,7 @@ def AlarmUrl():
             return alarm.value
     else:
         return theurl
-    
+
 
 class SetAlarmURL(webapp.RequestHandler):
     def post(self):
@@ -60,26 +60,28 @@ def SendAlarm(issue, target, admins, message, redirecturl):
     notified = memcache.get(unique)
     if notified is None:
         memcache.set(unique, "", alarm_intervall)
-        logging.info('Alarm send for %s: \n%s' % (unique, message))
+        URL = AlarmUrl()
+        logging.info('Alarm send for %s to URL %s: \n%s' % (unique, URL, message))
         rpc = urlfetch.create_rpc()
-        urlfetch.make_fetch_call(rpc, redirecturl + "/alarm/redirect/" , payload=message, method="POST", headers={'issue': issue, 'target': target, 'admins': admins})
+        urlfetch.make_fetch_call(rpc, URL, payload=message, method="POST", headers={'issue': issue, 'target': target, 'admins': admins})
 
-class Redirect(webapp.RequestHandler):
-    def post(self):
-        RedirURL = AlarmUrl()
-        if (RedirURL == ""):
-            logging.error('Alarm was raised, but no alarm URL existed. Message:\n%s' % message)
-        else:
-            # logging.info('Redirecting to %s' % RedirURL)
-            self.redirect(RedirURL, True)
+
+## previously needed to bypass a google restriction, app engine code has changed now
+##class Redirect(webapp.RequestHandler):
+##    def post(self):
+##        RedirURL = AlarmUrl()
+##        if (RedirURL == ""):
+##            logging.error('Alarm was raised, but no alarm URL existed. Message:\n%s' % message)
+##        else:
+##            # logging.info('Redirecting to %s' % RedirURL)
+##            self.redirect(RedirURL, True)
 
 def main():
-  application = webapp.WSGIApplication([(r'/.*?/urlset',SetAlarmURL),
-                                        (r'/.*?/redirect/',Redirect)
+  application = webapp.WSGIApplication([(r'/.*?/urlset',SetAlarmURL)
                                         ],
                                        debug=True)
   wsgiref.handlers.CGIHandler().run(application)
-
+##(r'/.*?/redirect/',Redirect)
 
 if __name__ == '__main__':
   main()

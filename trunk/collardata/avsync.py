@@ -1,5 +1,9 @@
+import lindenip
 import logging
 import cgi
+import tools
+import os
+
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
 from google.appengine.api import memcache
@@ -22,6 +26,45 @@ class AppSettings(db.Model):
 sharedpass = AppSettings.get_or_insert("sharedpass", value="sharedpassword").value
 cmdurl = AppSettings.get_or_insert("cmdurl", value="http://yourcmdapp.appspot.com").value
 
+def AlarmUrl():
+    theurl=memcache.get('alarmurl')
+    if theurl is None:
+        alarm = AppSettings.get_by_key_name("alarmurl")
+        if alarm is None:
+            return ''
+        else:
+            memcache.set('alarmurl', alarm.value)
+            return alarm.value
+    else:
+        return theurl
+
+
+def RequestName(key):
+    URL = "%s/Key2Name/" % AlarmUrl()
+    logging.info('Key request send for %s to URL %s' % (key, URL))
+    rpc = urlfetch.create_rpc()
+    message = key
+    # send the request to an SL object
+    urlfetch.make_fetch_call(rpc, URL, payload=message, method="POST")
+
+
+
+class SetName(webapp.RequestHandler):
+    def post(self):
+        #check that we're coming from an LL ip
+        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
+            self.error(403)
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+            self.error(403)
+        else:
+            lines = self.request.body.split('\n')
+            params = {}
+            for line in lines:
+                params[line.split('=')[0]] = line.split('=')[1]
+            logging.info('Info receided from SL, now storing %s with key %s' % (params['name'], params['key']))
+            relations.update_av(params['key'], params['name'])
+
+
 class GetName2Key(webapp.RequestHandler):
     def get(self):
         if (self.request.headers['sharedpass'] == sharedpass):
@@ -33,7 +76,8 @@ class GetName2Key(webapp.RequestHandler):
                 self.response.out.write(name)
                 self.response.set_status(200)#accepted
             else:
-                logging.warning('Could not be resolved!')
+                logging.warning('Could not be resolved! Sending request now to inworld item.')
+                RequestName(key)
                 self.response.out.write('')
                 self.response.set_status(202)#accepted
         else:
@@ -48,6 +92,7 @@ class MainPage(webapp.RequestHandler):
 application = webapp.WSGIApplication(
     [
      (r'/.*?/getname',GetName2Key),
+     (r'/.*?/setname',SetName),
      ('/.*', MainPage)
      ],
     debug=True)
