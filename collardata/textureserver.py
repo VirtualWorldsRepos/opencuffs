@@ -27,22 +27,6 @@ adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32
 
 
 
-class DeleteTextures(webapp.RequestHandler):
-    def post(self):
-        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
-            self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
-            self.error(403)
-        else:
-            logging.info('OK: All deleted')
-            query = VendorTexture.gql('')
-            entities = query.fetch(1000,0)
-            for texture in entities:
-                texture.delete()
-            model.GenericStorage_Store('TextureTime', '-1111')
-            self.response.out.write('OK: All deleted')
-
-
 
 class StartTextureUpdate(webapp.RequestHandler):
     def post(self):
@@ -207,35 +191,6 @@ class VersionCheck(webapp.RequestHandler):
                 else:
                     self.response.out.write('CURRENT')
 
-class SendAllTextures(webapp.RequestHandler):
-    def post(self):
-        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
-            self.error(403)
-        elif not distributors.Distributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
-            logging.info("Illegal attempt to request texture from %s, vendor %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
-            self.error(403)
-        else:
-            # Use a query parameter to keep track of the last key of the last
-            # batch, to know where to start the next batch.
-            URL = self.request.body + "/Textures/"
-            logging.info("Sending data to %s" % URL)
-            query = VendorTexture.gql('')
-            entities = query.fetch(1000,0)
-            objectcount = 0
-            tosend= ''
-            for texture in entities:
-                objectcount=objectcount+1
-                tosend += "%s=%s\n" % (texture.item_name, texture.item_texture)
-                if objectcount==10:
-                    rpc = urlfetch.create_rpc()
-                    urlfetch.make_fetch_call(rpc, URL, payload=tosend, method="POST")
-                    logging.info("Sending:\n%s" % tosend)
-                    objectcount = 0
-                    tosend= ''
-            if objectcount > 0:
-                rpc = urlfetch.create_rpc()
-                urlfetch.make_fetch_call(rpc, URL, payload=tosend, method="POST")
-                logging.info("Sending:\n%s" % tosend)
 
 
 
@@ -245,16 +200,15 @@ def main():
                                         (r'/.*?/starttextureupdate',StartTextureUpdate),
                                         (r'/.*?/updatetextures',AddTextures),
                                         (r'/.*?/getalltextures',GetAllTextures),
-                                        (r'/.*?/deletetextures',DeleteTextures),
                                         (r'/.*?/versioncheck',VersionCheck),
-                                        (r'/.*?/updateversion',UpdateVersion),
-                                        (r'/.*?/sendalltextures',SendAllTextures)
+                                        (r'/.*?/updateversion',UpdateVersion)
                                         ], debug=True)
   wsgiref.handlers.CGIHandler().run(application)
 
 
 if __name__ == '__main__':
   main()
+
 
 
 # used to add a single texture, not in use for texture server
@@ -313,3 +267,34 @@ if __name__ == '__main__':
 ##                    else:
 ##                        result=query.item_name+"|"+query.item_texture
 ##                    self.response.out.write(result)
+
+# used to send texture to http_in devices
+##class SendAllTextures(webapp.RequestHandler):
+##    def post(self):
+##        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
+##            self.error(403)
+##        elif not distributors.Distributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
+##            logging.info("Illegal attempt to request texture from %s, vendor %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
+##            self.error(403)
+##        else:
+##            # Use a query parameter to keep track of the last key of the last
+##            # batch, to know where to start the next batch.
+##            URL = self.request.body + "/Textures/"
+##            logging.info("Sending data to %s" % URL)
+##            query = VendorTexture.gql('')
+##            entities = query.fetch(1000,0)
+##            objectcount = 0
+##            tosend= ''
+##            for texture in entities:
+##                objectcount=objectcount+1
+##                tosend += "%s=%s\n" % (texture.item_name, texture.item_texture)
+##                if objectcount==10:
+##                    rpc = urlfetch.create_rpc()
+##                    urlfetch.make_fetch_call(rpc, URL, payload=tosend, method="POST")
+##                    logging.info("Sending:\n%s" % tosend)
+##                    objectcount = 0
+##                    tosend= ''
+##            if objectcount > 0:
+##                rpc = urlfetch.create_rpc()
+##                urlfetch.make_fetch_call(rpc, URL, payload=tosend, method="POST")
+##                logging.info("Sending:\n%s" % tosend)
