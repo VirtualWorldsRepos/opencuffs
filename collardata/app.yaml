@@ -48,6 +48,9 @@ handlers:
   script: freebielist.py
   login: admin
 
+- url: /textureserver/.*
+  script: textureserver.py
+
 - url: /alarm/.*
   script: alarm.py
 
