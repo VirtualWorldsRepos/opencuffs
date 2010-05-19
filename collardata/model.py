@@ -60,7 +60,7 @@ def GenericStorage_Get(generic_token):
     memtoken = "genstore_%s" % generic_token
     value = memcache.get(memtoken)
     if value is None:
-        record = AppSettings.get_by_key_name(generic_token).get()
+        record = AppSettings.get_by_key_name(generic_token)
         if record is not None:
             value = record.value
             logging.info("Generic token '%s' retrieved from DB, Value: %s" % (generic_token,value))
