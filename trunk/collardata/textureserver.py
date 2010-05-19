@@ -108,7 +108,7 @@ class UpdateVersion(webapp.RequestHandler):
                     if record.freebie_texture_update < starttime:
                         logging.info ('Cleaned info for %s' % record.freebie_name)
                         record.freebie_texture_serverkey = ''
-                        record.freebie_texture_update = 0
+                        record.freebie_texture_update = -1
                         record.freebie_texture_key = ''
 
                 logging.info ('Version info stored: %s' % ts)
@@ -158,19 +158,20 @@ class GetAllTextures(webapp.RequestHandler):
                             last_key=int(last_key_str)
                             result ='continue\n%s\n' % current_version
                             logging.info ('last_key was: %s' % last_key_str)
-                        query = FreebieItem.gql('WHERE freebie_texture_key != :1', '')
+                        query = FreebieItem.gql('WHERE freebie_texture_update > 0')
                         entities = query.fetch(21,last_key)
                         count = 0
                         more = False
                         for texture in entities:
                             count = count + 1
                             if count < 21:
+                                logging.info('%s:%d' % (texture.freebie_name,texture.freebie_texture_update))
                                 result=result + texture.freebie_name +"\n"+texture.freebie_texture_key+"\n"
                             else:
                                 last_key=last_key+20
                                 result=result + ("startwith\n%d" % (last_key))
                                 more = True
-                                logging.info ('More texture availabe, request next tim from %d' % (last_key))
+                                logging.info ('More texture availabe, request next time from %d' % (last_key))
                         if more == False:
                             logging.info ('Sending finished now')
                             result = result + "end\n"
