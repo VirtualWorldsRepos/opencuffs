@@ -60,6 +60,9 @@ handlers:
 - url: /avsync/.*
   script: avsync.py
 
+- url: /groupname/.*
+  script: groupname.py
+
 admin_console:
   pages:
   - name: Admin Console
