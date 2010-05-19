@@ -12,8 +12,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 
-from updater import FreebieItem
-from distributors import Distributor, Contributor
+from model import FreebieItem, Distributor, Contributor
 
 head = '''
 <html>
@@ -40,6 +39,7 @@ table.sortable thead {
 </style>
 </head>
 <body>
+<b><a href="/freebielist/">Freebies</a> | <a href="/freebielist/distributors">Distributors</a> | <a href="/freebielist/contributors">Contributors</a></b><p>
 '''
 
 end = '''
@@ -66,7 +66,7 @@ class Distributors(webapp.RequestHandler):
             message += '<tr><td>%d</td>%s' % (i+1, dists[i])
 
         message += "</table>"
-        self.response.out.write((head % 'Contributor List') + message + end)
+        self.response.out.write((head % 'Distributor List') + message + end)
 
 
 class Contributors(webapp.RequestHandler):
@@ -94,14 +94,20 @@ class MainPage(webapp.RequestHandler):
         message = '''<h1>List of Freebie items</h1>
 <p>This lists all item currently in the distribution system as of %s.</p>
 <table class="sortable" border=\"1\">''' % datetime.datetime.utcnow().isoformat(' ')
-        message += '<tr><th>Row</th><th>Owner</th><th>Giver ID</th><th>Name</th><th>Version</th><th>Update Date</th><th>Distributor Location</th></tr><br />\n'
+        message += '<tr><th>Row</th><th>Owner</th><th>Giver ID</th><th>Name</th><th>Version</th><th>Update Date</th><th>Distributor Location</th><th>Texture Key</th><th>Texture Server</th><th>Texture Updatetime</th></tr><br />\n'
         query = FreebieItem.gql("")
         content =[]
         for record in query:
             owner = record.freebie_owner
             if (owner == None):
                 owner = '***Not assigned***'
-            content += ['<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td>\n' % (owner, record.freebie_giver, record.freebie_name, record.freebie_version, record.freebie_timedate, record.freebie_location)]
+            if (record.freebie_texture_update == None):
+                i = -1
+            else:
+                i = record.freebie_texture_update
+            content += ['<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%d</td>\n' % (owner, record.freebie_giver, record.freebie_name, record.freebie_version, record.freebie_timedate, record.freebie_location, record.freebie_texture_key, record.freebie_texture_serverkey, i)]
+
+
 
         content = sorted(content)
 
