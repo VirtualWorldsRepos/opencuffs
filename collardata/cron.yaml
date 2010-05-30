@@ -1,0 +1,4 @@
+cron:
+- description: Cleanup vendor list ever 12 hours
+  url: /cron/CleanVendors
+  schedule: every 12 hours
