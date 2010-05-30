@@ -19,12 +19,62 @@ from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import memcache
 from google.appengine.api import urlfetch
 
-from model import FreebieItem, FreebieDelivery
+from model import FreebieItem, FreebieDelivery, VendorInfo
 import model
 
-#only nandana singh and athaliah opus are authorized to add distributors
-adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef','dbd606b9-52bb-47f7-93a0-c3e427857824','8487a396-dc5a-4047-8a5b-ab815adb36f0']
+import distributors
 
+updateTimeout = 180;
+
+
+##class VendorInfo(db.Model):
+##    vendor_key = db.StringProperty(required=True)
+##    vendor_owner = db.StringProperty(required=True)
+##    vendor_slurl = db.StringProperty(required=True, indexed=False)
+##    vendor_parcel = db.StringProperty(required=True, indexed=False)
+##    vendor_agerating = db.StringProperty(required=True)
+##    vendor_lastupdate = db.IntegerProperty(required=True)
+##    vendor_public = db.IntegerProperty(required=True)
+##
+
+def UpdateVendorInfo (vkey, vowner, public, body):
+    logging.info('vkey: %s, vowner: %s, public: %s, body: %s' % (vkey, vowner, public, body))
+    db_key = "key_%s" % vkey
+    t=int(time.time())
+    record = VendorInfo.get_by_key_name(db_key)
+    if body != "":
+        lines = body.split('\n')
+        slurl = lines[0]
+        parcelName = lines[1]
+        parcelRating = lines [2]
+    else:
+        slurl = ''
+        parcelName = ''
+        parcelRating = ''
+
+    if record is None:
+        if public=='1':
+            VendorInfo(key_name=db_key, vendor_key = vkey, vendor_owner = vowner, vendor_slurl = slurl, vendor_parcel = parcelName, vendor_agerating = parcelRating, vendor_lastupdate = t, vendor_public = 1).put()
+            logging.info("Adding vendor %s at SLURL %s" % (vkey, slurl))
+
+    else:
+        if public == '0':
+            logging.info("Removing vendor %s as it is set to NON public now" % vkey)
+            record.delete()
+        elif record.vendor_slurl != slurl:
+            record.vendor_owner = vowner
+            record.vendor_slurl = slurl
+            record.vendor_parcel = parcelName
+            record.vendor_agerating = parcelRating
+            record.vendor_lastupdate = t
+            record.vendor_public = 1
+            logging.info("Updating  info for vendor %s, now at SLURL %s" % (vkey, slurl))
+            record.put()
+        else:
+            record.vendor_lastupdate = t
+            record.vendor_public = 1
+            logging.info("Updating  timestamp for vendor %s (%d)" % (vkey, t))
+            record.put()
 
 
 
@@ -32,27 +82,31 @@ class StartTextureUpdate(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             t=int(time.time())
             serverkey= self.request.headers['X-SecondLife-Object-Key']
             logging.info('Texture update started from texture server %s at %d' % (serverkey, t))
-            # Setting texture time to -1111 to signalize texure update is in progress
-            if model.GenericStorage_Get('TextureTime') == '-1111':
-                logging.warning('Texture update requested from texture server %s at %d, but already in progress' % (serverkey, t))
-                self.response.out.write('Update already in progress, try again later' )
-            else:
-                logging.info('Texture update started from texture server %s at %d' % (serverkey, t))
-                model.GenericStorage_Store('TextureTime', '-1111')
-                self.response.out.write('Timestamp:%d' % t )
+            # Setting texture time to negative time to signalize texure update is in progress
+            currentVersion = int(model.GenericStorage_Get('TextureTime'))
+            if currentVersion < 0:
+                if -currentVersion + updateTimeout < t:
+                    logging.warning('Texture update timestamp was outdated, allowing texture update (Old timestamp: %d)' % currentVersion)
+                else:
+                    logging.warning('Texture update requested from texture server %s at %d, but already in progress' % (serverkey, t))
+                    self.response.out.write('Update already in progress, try again later' )
+                    return
+            logging.info('Texture update started from texture server %s at %d' % (serverkey, t))
+            model.GenericStorage_Store('TextureTime', '-%d' % t)
+            self.response.out.write('Timestamp:%d' % t )
 
 
 class AddTextures(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             self.response.headers['Content-Type'] = 'text/plain'
@@ -70,7 +124,7 @@ class AddTextures(webapp.RequestHandler):
                     texture = params['texture']
 
                     t=int(time.time())
-                    ts="V%d" % t
+                    ts="%d" % t
 
                     record = FreebieItem.gql('WHERE freebie_name = :1', item).get()
                     if record is None:
@@ -88,7 +142,7 @@ class UpdateVersion(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             done_str = self.request.get('done')
@@ -100,7 +154,7 @@ class UpdateVersion(webapp.RequestHandler):
             else:
                 starttime=int(done_str)
                 t=int(time.time())
-                ts="V%d" % t
+                ts="%d" % t
                 logging.info ('Cleaning all textures for server %s with timestamp below %d' % (serverkey, starttime))
 
                 query = FreebieItem.gql("WHERE freebie_texture_serverkey = :1", serverkey)
@@ -110,6 +164,7 @@ class UpdateVersion(webapp.RequestHandler):
                         record.freebie_texture_serverkey = ''
                         record.freebie_texture_update = -1
                         record.freebie_texture_key = ''
+                        record.put()
 
                 logging.info ('Version info stored: %s' % ts)
                 model.GenericStorage_Store('TextureTime', ts)
@@ -123,16 +178,19 @@ class GetAllTextures(webapp.RequestHandler):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
         else:
-##            av=self.request.headers['X-SecondLife-Owner-Key']
-##            if not distributors.distributor_authorized(av): # function needs to be changed to distributors.authorized_designer as soon as the database for that is fully functioning
-##                self.error(402)
-##            else:
+            av=self.request.headers['X-SecondLife-Owner-Key']
+            if not distributors.Distributor_authorized(av): # function needs to be changed to distributors.authorized_designer as soon as the database for that is fully functioning
+                self.error(402)
+            else:
+                objectkey=self.request.headers['X-SecondLife-Object-Key']
+                public = self.request.get('Public')
+                body = self.request.body
                 # Use a query parameter to keep track of the last key of the last
                 # batch, to know where to start the next batch.
                 last_key_str = self.request.get('start')
                 last_version_str = self.request.get('last_version')
-                current_version = model.GenericStorage_Get('TextureTime')
-                if current_version == '-1111':
+                current_version = int(model.GenericStorage_Get('TextureTime'))
+                if current_version < 0:
                     # system updating at the moment
                     logging.info ('System in update mode, inform the client')
                     self.response.out.write('Updating')
@@ -147,6 +205,7 @@ class GetAllTextures(webapp.RequestHandler):
                         logging.info ('last_version (%s)' % last_version_str)
                     if current_version == last_version_str:
                         logging.info ('Versions are identic, no action needed')
+                        UpdateVendorInfo(objectkey, av, public, body)
                         self.response.out.write('CURRENT')
                     else:
                         logging.info ('Versions different (DB:%s,Vendor:%s) Starting to send update...' % (current_version, last_version_str))
@@ -174,6 +233,7 @@ class GetAllTextures(webapp.RequestHandler):
                                 logging.info ('More texture availabe, request next time from %d' % (last_key))
                         if more == False:
                             logging.info ('Sending finished now')
+                            UpdateVendorInfo(objectkey, av, public, body)
                             result = result + "end\n"
                         self.response.out.write(result)
 
@@ -183,14 +243,20 @@ class VersionCheck(webapp.RequestHandler):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
         else:
-            vendor_version = self.request.get('tv')
-            current_version = model.GenericStorage_Get('TextureTime')
-            logging.info("Texture request rom vendor with version %s, db at version %s" % (vendor_version, current_version))
-            if vendor_version:
-                if current_version != vendor_version:
-                    self.response.out.write('UPDATE:%s' % current_version)
-                else:
-                    self.response.out.write('CURRENT')
+            av=self.request.headers['X-SecondLife-Owner-Key']
+            if not distributors.distributor_authorized(av): # function needs to be changed to distributors.authorized_designer as soon as the database for that is fully functioning
+                self.error(402)
+            else:
+                objectkey=self.request.headers['X-SecondLife-Object-Key']
+                public = self.request.get('Public')
+                vendor_version = self.request.get('tv')
+                current_version = model.GenericStorage_Get('TextureTime')
+                logging.info("Texture request from vendor with version %s, db at version %s" % (vendor_version, current_version))
+                if vendor_version:
+                    if current_version != vendor_version:
+                        self.response.out.write('UPDATE:%s' % current_version)
+                    else:
+                        self.response.out.write('CURRENT')
 
 
 
@@ -217,7 +283,7 @@ if __name__ == '__main__':
 ##    def post(self):
 ##        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
 ##            self.error(403)
-##        elif not self.request.headers['X-SecondLife-Owner-Key'] in adminkeys:
+##        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
 ##            self.error(403)
 ##        else:
 ##            self.response.headers['Content-Type'] = 'text/plain'
@@ -269,33 +335,3 @@ if __name__ == '__main__':
 ##                        result=query.item_name+"|"+query.item_texture
 ##                    self.response.out.write(result)
 
-# used to send texture to http_in devices
-##class SendAllTextures(webapp.RequestHandler):
-##    def post(self):
-##        if not lindenip.inrange(os.environ['REMOTE_ADDR']):
-##            self.error(403)
-##        elif not distributors.Distributor_authorized(self.request.headers['X-SecondLife-Owner-Key']):
-##            logging.info("Illegal attempt to request texture from %s, vendor %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
-##            self.error(403)
-##        else:
-##            # Use a query parameter to keep track of the last key of the last
-##            # batch, to know where to start the next batch.
-##            URL = self.request.body + "/Textures/"
-##            logging.info("Sending data to %s" % URL)
-##            query = VendorTexture.gql('')
-##            entities = query.fetch(1000,0)
-##            objectcount = 0
-##            tosend= ''
-##            for texture in entities:
-##                objectcount=objectcount+1
-##                tosend += "%s=%s\n" % (texture.item_name, texture.item_texture)
-##                if objectcount==10:
-##                    rpc = urlfetch.create_rpc()
-##                    urlfetch.make_fetch_call(rpc, URL, payload=tosend, method="POST")
-##                    logging.info("Sending:\n%s" % tosend)
-##                    objectcount = 0
-##                    tosend= ''
-##            if objectcount > 0:
-##                rpc = urlfetch.create_rpc()
-##                urlfetch.make_fetch_call(rpc, URL, payload=tosend, method="POST")
-##                logging.info("Sending:\n%s" % tosend)

@@ -1,11 +1,15 @@
 application: collardata1
-version: 20100510
+version: 20100529
 runtime: python
 api_version: 1
 
 handlers:
 - url: /static
   static_dir: static
+
+- url: /cron/.*
+  script: cron.py
+  login: admin
 
 - url: /updater/.*
   script: updater.py
@@ -50,6 +54,9 @@ handlers:
 
 - url: /textureserver/.*
   script: textureserver.py
+
+- url: /vendorlocs/.*
+  script: vendorlocs.py
 
 - url: /alarm/.*
   script: alarm.py

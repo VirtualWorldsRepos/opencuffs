@@ -2,6 +2,8 @@ import logging
 from google.appengine.ext import db
 from google.appengine.api import memcache
 
+#only nandana singh and athaliah opus are authorized to add distributors
+adminkeys = ['2cad26af-c9b8-49c3-b2cd-2f6e2d808022', '98cb0179-bc9c-461b-b52c-32420d5ac8ef','dbd606b9-52bb-47f7-93a0-c3e427857824','8487a396-dc5a-4047-8a5b-ab815adb36f0']
 
 class Av(db.Model):
     id = db.StringProperty()
@@ -44,6 +46,15 @@ class FreebieDelivery(db.Model):
     giverkey = db.StringProperty(required=True)
     rcptkey = db.StringProperty(required=True)
     itemname = db.StringProperty(required=True)#in form "name - version"
+
+class VendorInfo(db.Model):
+    vendor_key = db.StringProperty(required=True)
+    vendor_owner = db.StringProperty(required=True)
+    vendor_slurl = db.StringProperty(required=True, indexed=False)
+    vendor_parcel = db.StringProperty(required=True)
+    vendor_agerating = db.StringProperty(required=True)
+    vendor_lastupdate = db.IntegerProperty(required=True)
+    vendor_public = db.IntegerProperty(required=True)
 
 def GenericStorage_Store(generic_token, generic_value):
     memtoken = "genstore_%s" % generic_token
