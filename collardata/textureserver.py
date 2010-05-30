@@ -26,17 +26,6 @@ import distributors
 
 updateTimeout = 180;
 
-
-##class VendorInfo(db.Model):
-##    vendor_key = db.StringProperty(required=True)
-##    vendor_owner = db.StringProperty(required=True)
-##    vendor_slurl = db.StringProperty(required=True, indexed=False)
-##    vendor_parcel = db.StringProperty(required=True, indexed=False)
-##    vendor_agerating = db.StringProperty(required=True)
-##    vendor_lastupdate = db.IntegerProperty(required=True)
-##    vendor_public = db.IntegerProperty(required=True)
-##
-
 def UpdateVendorInfo (vkey, vowner, public, body):
     logging.info('vkey: %s, vowner: %s, public: %s, body: %s' % (vkey, vowner, public, body))
     db_key = "key_%s" % vkey

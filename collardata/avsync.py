@@ -14,14 +14,8 @@ import relations
 
 relationtypes = ['owns', 'secowns']#valid relation types.  For the sake of consistency
                                     #let's keep only active verbs in this list
-class Av(db.Model):
-    id = db.StringProperty()
-    name = db.StringProperty()
 
-class AppSettings(db.Model):
-  #token = db.StringProperty(multiline=False)
-  value = db.StringProperty(multiline=False)
-
+from model import Av, AppSettings
 
 sharedpass = AppSettings.get_or_insert("sharedpass", value="sharedpassword").value
 cmdurl = AppSettings.get_or_insert("cmdurl", value="http://yourcmdapp.appspot.com").value
@@ -54,7 +48,7 @@ class SetName(webapp.RequestHandler):
         #check that we're coming from an LL ip
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             lines = self.request.body.split('\n')

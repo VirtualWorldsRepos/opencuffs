@@ -46,7 +46,7 @@ table.sortable thead {
 </head>
 <body>
 <h1><img src='/static/OpenCollarLogo128.png' align="absmiddle">List of public available vendors of OpenCollar</h1>
-<p>In the following you find a list of all public accessible vendors. You can click on the headers of the table. to sort it for that column and use the SLURL to reach the veldors inworld.</p>
+<p>In the following you find a list of all public accessible vendors. You can click on the headers of the table to sort it for that column and use the SLURL to reach the vendors inworld.</p>
 <p>This list is automatically maintained, outdated vendors will be removed within 48 hours. The vendors there are usually not maintained by OpenCollar self.</p>
 '''
 
