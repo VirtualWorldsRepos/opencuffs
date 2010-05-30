@@ -19,9 +19,7 @@ from google.appengine.api import urlfetch
 
 alarm_intervall = 600
 
-class AppSettings(db.Model):
-  #token = db.StringProperty(multiline=False)
-  value = db.StringProperty(multiline=False)
+from model import  AppSettings
 
 
 def AlarmUrl():
@@ -43,7 +41,7 @@ class SetAlarmURL(webapp.RequestHandler):
         logging.info('Alarm URL')
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             logging.warning("Illegal attempt to set alarm URL from %s, box %s located in %s at %s" % (self.request.headers['X-SecondLife-Owner-Name'], self.request.headers['X-SecondLife-Object-Name'], self.request.headers['X-SecondLife-Region'], self.request.headers['X-SecondLife-Local-Position']))
             self.error(403)
         else:

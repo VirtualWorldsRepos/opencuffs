@@ -9,6 +9,7 @@ import lindenip
 import distributors
 import logging
 import tools
+import model
 
 import yaml
 
@@ -18,7 +19,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.api import memcache
 
-from updater import FreebieItem, FreebieDelivery
+from model import FreebieItem, FreebieDelivery
 
 class Deliver(webapp.RequestHandler):
     def post(self):
@@ -56,7 +57,7 @@ class Deliver(webapp.RequestHandler):
 
                 name_version = "%s - %s" % (name, item['version'])
                 rcpt = str(params['rcpt'])
-                
+
                 if tools.enqueue_delivery(item['giver'], rcpt, name_version, self.request.host_url):
                     self.response.out.write('%s|%s' % (rcpt, name_version))
                 else:
@@ -71,7 +72,7 @@ class AddDist(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             #add distributor
@@ -89,7 +90,7 @@ class RemDist(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             #add distributor
@@ -107,7 +108,7 @@ class AddContrib(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             #add distributor
@@ -125,7 +126,7 @@ class RemContrib(webapp.RequestHandler):
     def post(self):
         if not lindenip.inrange(os.environ['REMOTE_ADDR']):
             self.error(403)
-        elif not self.request.headers['X-SecondLife-Owner-Key'] in tools.adminkeys:
+        elif not self.request.headers['X-SecondLife-Owner-Key'] in model.adminkeys:
             self.error(403)
         else:
             #add distributor

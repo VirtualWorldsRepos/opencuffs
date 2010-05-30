@@ -11,10 +11,7 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-class AvTokenValue(db.Model):
-    av = db.StringProperty()
-    token = db.StringProperty()
-    value = db.TextProperty()
+from model import AvTokenValue
 
 class MainPage(webapp.RequestHandler):
     def get(self):
@@ -25,8 +22,8 @@ class MainPage(webapp.RequestHandler):
             self.response.out.write('%s=%s\n' % (record.token, record.value))
 
 application = webapp.WSGIApplication(
-    [('/.*', MainPage)], 
-    debug=True) 
+    [('/.*', MainPage)],
+    debug=True)
 
 def main():
     run_wsgi_app(application)

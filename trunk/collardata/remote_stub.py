@@ -12,11 +12,7 @@ from google.appengine.ext import db
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 
-class AvTokenValue(db.Model):
-    av = db.StringProperty()
-    token = db.StringProperty()
-    value = db.TextProperty()
-
+from model import AvTokenValue
 
 class MainPage(webapp.RequestHandler):
     def get(self):
@@ -33,18 +29,18 @@ class MainPage(webapp.RequestHandler):
             else:
                 self.response.out.write("remoteoff|%s" % av)
                 logging.warning('Remote disabled for selfowned %s' %  self.request.headers['X-SecondLife-Owner-Name'])
-       
+
     def put(self):
         #check linden IP
         self.response.out.write("")
 
 application = webapp.WSGIApplication(
     [('.*', MainPage)
-     ], 
-    debug=True) 
+     ],
+    debug=True)
 
 def main():
     run_wsgi_app(application)
 
 if __name__ == "__main__":
-    main()    
+    main()

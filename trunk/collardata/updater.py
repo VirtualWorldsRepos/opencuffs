@@ -19,21 +19,8 @@ from google.appengine.api import memcache
 import yaml
 
 from model import FreebieItem, FreebieDelivery
-null_key = "00000000-0000-0000-0000-000000000000"
 
-##class FreebieItem(db.Model):
-##    freebie_name = db.StringProperty(required=True)
-##    freebie_version = db.StringProperty(required=True)
-##    freebie_giver = db.StringProperty(required=True)
-##    freebie_owner = db.StringProperty(required=False)
-##    freebie_timedate = db.DateTimeProperty(required=False)
-##    freebie_location = db.StringProperty(required=False)
-##
-##class FreebieDelivery(db.Model):
-##    giverkey = db.StringProperty(required=True)
-##    rcptkey = db.StringProperty(required=True)
-##    itemname = db.StringProperty(required=True)#in form "name - version"
-##
+null_key = "00000000-0000-0000-0000-000000000000"
 
 class Check(webapp.RequestHandler):
     def get(self):

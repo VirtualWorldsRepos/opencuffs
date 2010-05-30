@@ -8,11 +8,7 @@ import logging
 import yaml
 import time
 
-
-class AvTokenValue(db.Model):
-    av = db.StringProperty()
-    token = db.StringProperty()
-    value = db.TextProperty()
+from model import AvTokenValue
 
 #Cleo: not allowed AVs
 # depending on the amount of AVs invovled in the attack we might need to change this to a database, i would like to prevent for now to save apptime
@@ -32,20 +28,20 @@ def validvalue(action,key,name,token,value, headers):
     objkey = headers['X-SecondLife-Object-Key']
     objname = headers['X-SecondLife-Object-Name']
     objregion = headers['X-SecondLife-Region']
-    objpos = headers['X-SecondLife-Local-Position']   
+    objpos = headers['X-SecondLife-Local-Position']
 
     # first check if Av is in block list. May need to be changed to a table :(
     if key in blockedkeys:
-        # log warning     
+        # log warning
         logging.warning('Illegal %s access by %s.\nToken: %s\nValue: %s\nObjKey: %s\nObjName: %s\nObjRegion: %s\nObjPos: %s' % (action,name,token,value, objkey, objname, objregion, objpos))
         # return false, so access gets blocked
-            
-        
+
+
         #query = AvTokenValue.gql("WHERE av = :1", key)
         #record = query.get()
         #record.delete()#delete just 1 record
         #logging.info('deleted %d records belonging to %s' % (1, name))
-        return False    
+        return False
 
     #throttle requests
     #first load the timestamps, which will be saved in memcache as a yaml list
