@@ -102,3 +102,16 @@ def del_by_obj_type(obj, type):
     query = Relation.gql("WHERE obj_id = :1 AND type = :2", obj, type)
     for record in query:
         record.delete()
+
+def del_by_obj_subj(obj, subj):
+    """deletes any and all entities with given subj_id, type, and obj_id"""
+    memcache.set(obj, "changed")
+    result = 0
+    query = Relation.gql("WHERE subj_id = :1 AND obj_id = :2", subj, obj)
+    for record in query:
+        if record.type=="owns":
+            result=result|1
+        if record.type=="secowns":
+            result=result|2
+        record.delete()
+    return '%d' % result
