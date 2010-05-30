@@ -12,7 +12,7 @@ import relations
 class AppSettings(db.Model):
   #token = db.StringProperty(multiline=False)
   value = db.StringProperty(multiline=False)
-  
+
 sharedpass = AppSettings.get_or_insert("sharedpass", value="sharedpassword").value
 
 class MainPage(webapp.RequestHandler):
@@ -58,18 +58,22 @@ class MainPage(webapp.RequestHandler):
                 relations.del_by_obj(obj)
             elif mode == "all":
                 relations.delete(subj, type, obj)
-            self.error(202)
+            elif type == "safety":
+                logging.debug('TRYING SAFETY DELETE')
+                result = relations.del_by_obj_subj(obj, subj)
+                self.response.out.write(result)
+            self.response.set_status(202)
         else:
             self.error(403)
             logging.error('wrong shared password expecting %s received %s ip address' % (sharedpass,self.request.headers['sharedpass'],os.environ['REMOTE_ADDR']))
 
 application = webapp.WSGIApplication(
     [('.*', MainPage)
-     ], 
-    debug=True) 
+     ],
+    debug=True)
 
 def main():
     run_wsgi_app(application)
 
 if __name__ == "__main__":
-    main()    
+    main()
