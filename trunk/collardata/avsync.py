@@ -16,6 +16,7 @@ relationtypes = ['owns', 'secowns']#valid relation types.  For the sake of consi
                                     #let's keep only active verbs in this list
 
 from model import Av, AppSettings
+import model
 
 sharedpass = AppSettings.get_or_insert("sharedpass", value="sharedpassword").value
 cmdurl = AppSettings.get_or_insert("cmdurl", value="http://yourcmdapp.appspot.com").value
