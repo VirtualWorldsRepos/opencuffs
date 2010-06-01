@@ -29,9 +29,9 @@ class CleanVendors(webapp.RequestHandler):
     def get(self):
         t=int(time.time()) - VendorRemoveTimeout;
         logging.info('CRON CleanVendors: Removing vendors older than %d' % t)
-        query = VendorInfo.gql("WHERE vendor_lastupdate < :1",  t)
+        query = VendorInfo.gql("WHERE lastupdate < :1",  t)
         for record in query:
-            logging.info('CRON: Vendor info for %s at %s outdated, removing it' % (record.vendor_key, record.vendor_slurl))
+            logging.info('CRON: Vendor info for %s at %s outdated, removing it' % (record.vkey, record.slurl))
             record.delete()
         logging.info('CRON CleanVendors: Finished')
 

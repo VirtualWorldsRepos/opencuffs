@@ -58,7 +58,7 @@ end = '''
 
 class MainPage(webapp.RequestHandler):
     def get(self):
-        query = VendorInfo.gql("WHERE vendor_public=1 ORDER BY vendor_agerating ASC, vendor_parcel ASC")
+        query = VendorInfo.gql("WHERE public=1 ORDER BY agerating ASC, parcel ASC")
         if query.count()==0:
             message = '<b>Currently no vendors are listed!</b>'
         else:
@@ -66,7 +66,7 @@ class MainPage(webapp.RequestHandler):
             message += '<tr><th>Row</th><th>Parcel</th><th>AgeRating</th><th>SLURL</th></tr><br />\n'
             content =[]
             for record in query:
-                content += ['<td>%s</td><td>%s</td><td><a target="_blank" href="%s">%s</a></td>\n' % (record.vendor_parcel, record.vendor_agerating, record.vendor_slurl, record.vendor_slurl)]
+                content += ['<td>%s</td><td>%s</td><td><a target="_blank" href="%s">%s</a></td>\n' % (record.parcel, record.agerating, record.slurl, record.slurl)]
 
 
 

@@ -26,9 +26,9 @@ import distributors
 
 updateTimeout = 180;
 
-def UpdateVendorInfo (vkey, vowner, public, body):
-    logging.info('vkey: %s, vowner: %s, public: %s, body: %s' % (vkey, vowner, public, body))
-    db_key = "key_%s" % vkey
+def UpdateVendorInfo (vendorkey, vowner, public, body):
+    logging.info('vendorkey: %s, vowner: %s, public: %s, body: %s' % (vendorkey, vowner, public, body))
+    db_key = "key_%s" % vendorkey
     t=int(time.time())
     record = VendorInfo.get_by_key_name(db_key)
     if body != "":
@@ -43,26 +43,26 @@ def UpdateVendorInfo (vkey, vowner, public, body):
 
     if record is None:
         if public=='1':
-            VendorInfo(key_name=db_key, vendor_key = vkey, vendor_owner = vowner, vendor_slurl = slurl, vendor_parcel = parcelName, vendor_agerating = parcelRating, vendor_lastupdate = t, vendor_public = 1).put()
-            logging.info("Adding vendor %s at SLURL %s" % (vkey, slurl))
+            VendorInfo(key_name=db_key, vkey = vendorkey, owner = vowner, slurl = slurl, parcel = parcelName, agerating = parcelRating, lastupdate = t, public = 1).put()
+            logging.info("Adding vendor %s at SLURL %s" % (vendorkey, slurl))
 
     else:
         if public == '0':
-            logging.info("Removing vendor %s as it is set to NON public now" % vkey)
+            logging.info("Removing vendor %s as it is set to NON public now" % vendorkey)
             record.delete()
-        elif record.vendor_slurl != slurl:
-            record.vendor_owner = vowner
-            record.vendor_slurl = slurl
-            record.vendor_parcel = parcelName
-            record.vendor_agerating = parcelRating
-            record.vendor_lastupdate = t
-            record.vendor_public = 1
-            logging.info("Updating  info for vendor %s, now at SLURL %s" % (vkey, slurl))
+        elif record.slurl != slurl:
+            record.owner = vowner
+            record.slurl = slurl
+            record.parcel = parcelName
+            record.agerating = parcelRating
+            record.lastupdate = t
+            record.public = 1
+            logging.info("Updating  info for vendor %s, now at SLURL %s" % (vendorkey, slurl))
             record.put()
         else:
-            record.vendor_lastupdate = t
-            record.vendor_public = 1
-            logging.info("Updating  timestamp for vendor %s (%d)" % (vkey, t))
+            record.lastupdate = t
+            record.public = 1
+            logging.info("Updating  timestamp for vendor %s (%d)" % (vendorkey, t))
             record.put()
 
 
@@ -238,11 +238,11 @@ class VersionCheck(webapp.RequestHandler):
             else:
                 objectkey=self.request.headers['X-SecondLife-Object-Key']
                 public = self.request.get('Public')
-                vendor_version = self.request.get('tv')
+                version = self.request.get('tv')
                 current_version = model.GenericStorage_Get('TextureTime')
-                logging.info("Texture request from vendor with version %s, db at version %s" % (vendor_version, current_version))
-                if vendor_version:
-                    if current_version != vendor_version:
+                logging.info("Texture request from vendor with version %s, db at version %s" % (version, current_version))
+                if version:
+                    if current_version != version:
                         self.response.out.write('UPDATE:%s' % current_version)
                     else:
                         self.response.out.write('CURRENT')
@@ -309,7 +309,7 @@ if __name__ == '__main__':
 ##            self.error(403)
 ##        else:
 ####            av=self.request.headers['X-SecondLife-Owner-Key']
-####            if not distributors.vendor_authorized(av): # function needs to be changed to distributors.authorized_designer as soon as the database for that is fully functioning
+####            if not distributors.authorized(av): # function needs to be changed to distributors.authorized_designer as soon as the database for that is fully functioning
 ####                self.error(402)
 ####            else:
 ##                # Use a query parameter to keep track of the last key of the last
