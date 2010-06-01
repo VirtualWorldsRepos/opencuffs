@@ -19,8 +19,8 @@ from google.appengine.api import urlfetch
 
 alarm_intervall = 600
 
-from model import  AppSettings
-
+from model import AppSettings
+import model
 
 def AlarmUrl():
     theurl=memcache.get('alarmurl')

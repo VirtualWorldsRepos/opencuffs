@@ -48,13 +48,13 @@ class FreebieDelivery(db.Model):
     itemname = db.StringProperty(required=True)#in form "name - version"
 
 class VendorInfo(db.Model):
-    vendor_key = db.StringProperty(required=True)
-    vendor_owner = db.StringProperty(required=True)
-    vendor_slurl = db.StringProperty(required=True, indexed=False)
-    vendor_parcel = db.StringProperty(required=True)
-    vendor_agerating = db.StringProperty(required=True)
-    vendor_lastupdate = db.IntegerProperty(required=True)
-    vendor_public = db.IntegerProperty(required=True)
+    vkey = db.StringProperty(required=True)
+    owner = db.StringProperty(required=True)
+    slurl = db.StringProperty(required=True, indexed=False)
+    parcel = db.StringProperty(required=True)
+    agerating = db.StringProperty(required=True)
+    lastupdate = db.IntegerProperty(required=True)
+    public = db.IntegerProperty(required=True)
 
 def GenericStorage_Store(generic_token, generic_value):
     memtoken = "genstore_%s" % generic_token
