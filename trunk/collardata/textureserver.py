@@ -8,7 +8,7 @@ import re
 import lindenip
 import logging
 import time
-
+import string
 
 import yaml
 
@@ -26,11 +26,13 @@ import distributors
 
 updateTimeout = 180;
 
-def UpdateVendorInfo (vendorkey, vowner, public, body):
-    logging.info('vendorkey: %s, vowner: %s, public: %s, body: %s' % (vendorkey, vowner, public, body))
+def UpdateVendorInfo (vendorkey, vowner, public, sim_id, body):
+    logging.info('vendorkey: %s, vowner: %s, public: %s, sim: %s, body: %s' % (vendorkey, vowner, public, sim_id, body))
     db_key = "key_%s" % vendorkey
     t=int(time.time())
     record = VendorInfo.get_by_key_name(db_key)
+    sim_id = sim_id[0:string.find(sim_id,'(')]
+
     if body != "":
         lines = body.split('\n')
         slurl = lines[0]
@@ -41,15 +43,20 @@ def UpdateVendorInfo (vendorkey, vowner, public, body):
         parcelName = ''
         parcelRating = ''
 
+    VendorPageToken = "VendorPage"
+
     if record is None:
         if public=='1':
-            VendorInfo(key_name=db_key, vkey = vendorkey, owner = vowner, slurl = slurl, parcel = parcelName, agerating = parcelRating, lastupdate = t, public = 1).put()
-            logging.info("Adding vendor %s at SLURL %s" % (vendorkey, slurl))
+            VendorInfo(key_name=db_key, vkey = vendorkey, owner = vowner, slurl = slurl, parcel = parcelName, agerating = parcelRating, lastupdate = t, public = 1, sim = sim_id).put()
+            logging.info("Adding vendor %s, now at SLURL %s in sim %s" % (vendorkey, slurl, sim_id))
+            memcache.delete(VendorPageToken)
+
 
     else:
         if public == '0':
             logging.info("Removing vendor %s as it is set to NON public now" % vendorkey)
             record.delete()
+            memcache.delete(VendorPageToken)
         elif record.slurl != slurl:
             record.owner = vowner
             record.slurl = slurl
@@ -57,8 +64,10 @@ def UpdateVendorInfo (vendorkey, vowner, public, body):
             record.agerating = parcelRating
             record.lastupdate = t
             record.public = 1
-            logging.info("Updating  info for vendor %s, now at SLURL %s" % (vendorkey, slurl))
+            record.sim = sim_id
+            logging.info("Updating info for vendor %s, now at SLURL %s in sim %s" % (vendorkey, slurl, sim_id))
             record.put()
+            memcache.delete(VendorPageToken)
         else:
             record.lastupdate = t
             record.public = 1
@@ -100,7 +109,7 @@ class AddTextures(webapp.RequestHandler):
         else:
             self.response.headers['Content-Type'] = 'text/plain'
             name = self.request.headers['X-SecondLife-Owner-Name']
-            serverkey= self.request.headers['X-SecondLife-Object-Key']
+            serverkey = self.request.headers['X-SecondLife-Object-Key']
             logging.info('Receiving textures from texture server %s' % (serverkey))
             lines = self.request.body.split('\n')
 
@@ -172,12 +181,16 @@ class GetAllTextures(webapp.RequestHandler):
                 self.error(402)
             else:
                 objectkey=self.request.headers['X-SecondLife-Object-Key']
+                sim_id = self.request.headers['X-SecondLife-Region']
+                logging.info('Texture request from %s in sim %s' % (objectkey, sim_id))
+
                 public = self.request.get('Public')
                 body = self.request.body
                 # Use a query parameter to keep track of the last key of the last
                 # batch, to know where to start the next batch.
                 last_key_str = self.request.get('start')
                 last_version_str = self.request.get('last_version')
+                last_version = int(last_version_str)
                 current_version = int(model.GenericStorage_Get('TextureTime'))
                 if current_version < 0:
                     # system updating at the moment
@@ -189,12 +202,14 @@ class GetAllTextures(webapp.RequestHandler):
                     if not last_version_str:
                         # no last time given so we can use the stored time
                         last_version_str = '0'
+                        last_version = 0
                         logging.info ('no last_version, send update')
                     else:
+                        last_version = int(last_version_str)
                         logging.info ('last_version (%s)' % last_version_str)
-                    if current_version == last_version_str:
+                    if current_version == last_version:
                         logging.info ('Versions are identic, no action needed')
-                        UpdateVendorInfo(objectkey, av, public, body)
+                        UpdateVendorInfo(objectkey, av, public, sim_id, body)
                         self.response.out.write('CURRENT')
                     else:
                         logging.info ('Versions different (DB:%s,Vendor:%s) Starting to send update...' % (current_version, last_version_str))
@@ -222,7 +237,7 @@ class GetAllTextures(webapp.RequestHandler):
                                 logging.info ('More texture availabe, request next time from %d' % (last_key))
                         if more == False:
                             logging.info ('Sending finished now')
-                            UpdateVendorInfo(objectkey, av, public, body)
+                            UpdateVendorInfo(objectkey, av, public, sim_id, body)
                             result = result + "end\n"
                         self.response.out.write(result)
 
