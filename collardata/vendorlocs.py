@@ -11,6 +11,7 @@ from google.appengine.api import users
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
+from google.appengine.api import memcache
 
 from model import VendorInfo
 
@@ -58,25 +59,27 @@ end = '''
 
 class MainPage(webapp.RequestHandler):
     def get(self):
-        query = VendorInfo.gql("WHERE public=1 ORDER BY agerating ASC, parcel ASC")
-        if query.count()==0:
-            message = '<b>Currently no vendors are listed!</b>'
-        else:
-            message = '<table class="sortable" border=\"1\">'
-            message += '<tr><th>Row</th><th>Parcel</th><th>AgeRating</th><th>SLURL</th></tr><br />\n'
-            content =[]
-            for record in query:
-                content += ['<td>%s</td><td>%s</td><td><a target="_blank" href="%s">%s</a></td>\n' % (record.parcel, record.agerating, record.slurl, record.slurl)]
-
-
-
-            #content = sorted(content)
-
-            for i in range(0,len(content)):
-                message += '<tr><td>%d</td>%s' % (i+1, content[i])
-
-            message += "</table>"
-
+        memtoken = "VendorPage"
+        message = memcache.get(memtoken)
+        if message is None:
+            message = ''
+            query = VendorInfo.gql("WHERE public=1 ORDER BY agerating ASC, parcel ASC, lastupdate ASC")
+            if query.count()==0:
+                message = '<b>Currently no vendors are listed!</b>'
+            else:
+                message = '<table class="sortable" border=\"1\">'
+                message += '<tr><th>Row</th><th>Parcel</th><th>AgeRating</th><th>SLURL</th></tr><br />\n'
+                content = []
+                locList = []
+                for record in query:
+                    locStamp = '%s|%s' % (record.parcel, record.sim)
+                    if locStamp not in locList:
+                        locList += [locStamp]
+                        content += ['<td>%s</td><td>%s</td><td><a target="_blank" href="%s">%s</a></td>\n' % (record.parcel, record.agerating, record.slurl, record.slurl)]
+                for i in range(0,len(content)):
+                    message += '<tr><td>%d</td>%s' % (i+1, content[i])
+                message += "</table>"
+            memcache.set(memtoken, message)
         self.response.out.write((head % 'OpenCollar Vendor Locations') + message + end)
 
 

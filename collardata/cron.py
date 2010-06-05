@@ -24,6 +24,7 @@ import model
 
 # remove outdated vendors within 36-48 hours
 VendorRemoveTimeout = 129600
+VendorPageToken = "VendorPage"
 
 class CleanVendors(webapp.RequestHandler):
     def get(self):
@@ -33,6 +34,7 @@ class CleanVendors(webapp.RequestHandler):
         for record in query:
             logging.info('CRON: Vendor info for %s at %s outdated, removing it' % (record.vkey, record.slurl))
             record.delete()
+        memcache.delete(VendorPageToken)
         logging.info('CRON CleanVendors: Finished')
 
 

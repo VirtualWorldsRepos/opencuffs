@@ -51,6 +51,7 @@ class VendorInfo(db.Model):
     vkey = db.StringProperty(required=True)
     owner = db.StringProperty(required=True)
     slurl = db.StringProperty(required=True, indexed=False)
+    sim = db.StringProperty(required=False, indexed=False)
     parcel = db.StringProperty(required=True)
     agerating = db.StringProperty(required=True)
     lastupdate = db.IntegerProperty(required=True)
