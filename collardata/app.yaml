@@ -61,14 +61,15 @@ handlers:
 - url: /alarm/.*
   script: alarm.py
 
-- url: /wiki_redirect/.*
-  script: wiki_redirect.py
-
 - url: /avsync/.*
   script: avsync.py
 
 - url: /groupname/.*
   script: groupname.py
+
+# catcher for all other url to redirect them to the wiki. Please make sure this is the last py script reverenced in the api
+- url: /.*
+  script: wiki_redirect.py
 
 admin_console:
   pages:
