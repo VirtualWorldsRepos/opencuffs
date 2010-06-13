@@ -26,7 +26,7 @@ class GetSubs(webapp.RequestHandler):
             av = self.request.headers['X-SecondLife-Owner-Key']
             avname = self.request.headers['X-SecondLife-Owner-Name']
             if avname != "(Loading...)":
-                relations.update_av(av, avname)            
+                relations.update_av(av, avname)
             #get all relations for which av is owner or secowner
             subdict = {}
             suburldict = {}
@@ -43,7 +43,7 @@ class GetSubs(webapp.RequestHandler):
                 else:
                     #delete duplicates
                     sub.delete()
-                
+
             secownersubs = relations.getby_subj_type(av, 'secowns')
             for sub in secownersubs:
                 id = sub.obj_id
@@ -58,23 +58,25 @@ class GetSubs(webapp.RequestHandler):
             out = ''
             subsorted = sorted(subdict.items(), key=itemgetter(1))
             for sub in subsorted:
-                out += '%s,%s,%s,%s,' % (sub[0], sub[1], suburldict[sub[0]], currenttime)
+#                out += '%s,%s,%s,%s,' % (sub[0], sub[1], suburldict[sub[0]], currenttime)
+# fix for sub restriction we dont send actual urls but only send them on demand
+                out += '%s,%s,%s,%s,' % (sub[0], sub[1], "None", 0)
             self.response.out.write(out.rstrip(','))
-                            
-        
+
+
 class MainPage(webapp.RequestHandler):
     def get(self):
         self.response.out.write('hello world')
-                
+
 application = webapp.WSGIApplication(
     [
      (r'/.*?/getsubs',GetSubs),
-     ('/.*', MainPage)  
-     ], 
-    debug=True) 
+     ('/.*', MainPage)
+     ],
+    debug=True)
 
 def main():
     run_wsgi_app(application)
 
 if __name__ == "__main__":
-    main()        
+    main()
